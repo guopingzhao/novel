@@ -1,6 +1,6 @@
 const cheerio = require("cheerio");
 const iconv = require("iconv-lite");
-const {unlinkSync, writeFileSync, existsSync} = require("fs");
+const {unlinkSync, appendFileSync, existsSync} = require("fs");
 const {resolve} = require("path");
 const request = require("../../../src/util/request");
 
@@ -22,6 +22,10 @@ function p (url, i) {
                 author: $(tr).find("td").slice(2, 3).text(), 
             }));
         })
+        if (list.length > 10000) {
+            console.log(`www.maopuzw.com 写入${list.length}条`);
+            appendFileSync(filePath, list.splice(0, list.length).join("\n") + "\n");
+        }
         if($("a.next") && $("a.next").attr("href")) {
             p($("a.next").attr("href"), i);
         }
@@ -34,6 +38,6 @@ for(let i = 1; i < 11; i++) {
 
 process.once("exit", (code) => {
     if (!code) {
-        writeFileSync(filePath, JSON.stringify(list));
+        appendFileSync(filePath, list.join("\n"));
     }
 })

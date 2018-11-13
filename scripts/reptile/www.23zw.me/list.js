@@ -1,6 +1,6 @@
 const cheerio = require("cheerio");
 const iconv = require("iconv-lite");
-const {unlinkSync, writeFileSync, existsSync} = require("fs");
+const {unlinkSync, existsSync, appendFileSync} = require("fs");
 const {resolve} = require("path");
 const request = require("../../../src/util/request");
 
@@ -22,6 +22,10 @@ function p (url) {
                 author: td.slice(4, 5).text(),
             }));
         })
+        if (list.length > 10000) {
+            console.log(`www.23zw.me 写入${list.length}条`);
+            appendFileSync(filePath, list.splice(0, list.length).join("\n") + "\n");
+        }
         if($("a.next") && $("a.next").attr("href")) {
             p($("a.next").attr("href"))
         }
@@ -32,6 +36,6 @@ p("https://www.23zw.me/class_0_1.html")
 
 process.once("exit", (code) => {
     if (!code) {
-        writeFileSync(filePath, JSON.stringify(list));
+        appendFileSync(filePath, list.join("\n"));
     }
 })

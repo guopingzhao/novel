@@ -1,5 +1,8 @@
-const { readFileSync, writeFileSync } = require("fs");
-const { exec } = require("child_process");
+const { unlinkSync, existsSync ,appendFileSync } = require("fs");
+const { resolve } = require("path");
+
+const filePath = resolve(__dirname, "perfect.json");
+if (existsSync(filePath)) unlinkSync(filePath)
 
 const qukankan = "www.7kankan.com";
 const aoshi = "www.23zw.me";
@@ -83,8 +86,12 @@ async function start(list, modules) {
       ...detail,
       ...item,
     });
+    if (perfect.length > 2000) {
+      console.log(`perfect 写入${perfect.length}条`);
+      appendFileSync(filePath, perfect.splice(0, perfect.length).join("\n") + "\n");
+    }
   }
-  writeFileSync("./perfect.json", JSON.stringify(perfect, null, 2));
+  appendFileSync(filePath, perfect.join("\n"));
 }
 
 process.once("message", ({ list, modules }) => {
