@@ -87,7 +87,6 @@ function fetch(url, options = {}, callback) {
 
     const { data, resType, ...finalOptions } = computeOption(url, options);
     const request = getRequest(url);
-    let req = null;
     return new Promise((resolve, reject) => {
         let req = null;
         try {

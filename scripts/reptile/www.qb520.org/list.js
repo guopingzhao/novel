@@ -8,6 +8,7 @@ const filePath = resolve(__dirname, "./list.txt");
 if(existsSync(filePath)) unlinkSync(filePath);
 
 const list = [];
+let errorNum = 0;
 
 function p (url, i) {
     request(url, ({body}) => {
@@ -26,14 +27,30 @@ function p (url, i) {
             console.log(`www.qb520.org 写入${list.length}条`);
             appendFileSync(filePath, list.splice(0, list.length).join("\n") + "\n");
         }
-        if($("a.next") && $("a.next").attr("href")) {
-            p($("a.next").attr("href"), i);
+    }).catch(() => {
+        console.log(`www.qb520.org 错误数${++errorNum}`)
+    })
+}
+
+function start(i) {
+    request(`http://www.qb520.org/qblist/${i}.html`, async ({body}) => {
+        const bodyStr = iconv.decode(body, "gbk");
+        const $ = cheerio.load(bodyStr);
+        const max = ~~$("#pagelink > a.last").text();
+        const promise = [];
+        for (let j = 1; j <= max; j++) {
+            const req = p(`http://www.qb520.org/qblist/${i}_${j}.html`, i);
+            if (promise.length < 1) {
+                promise.push(req)
+            } else {
+                await Promise.all(promise.splice(0, promise.length).concat(req))
+            }
         }
     })
 }
 
 for(let i = 1; i < 11; i++) {
-    p(`http://www.qb520.org/qblist/${i}.html`, i)
+    start(i);
 }
 
 process.once("exit", (code) => {

@@ -9,8 +9,10 @@ if(existsSync(filePath)) unlinkSync(filePath);
 
 const list = [];
 
+let errorNum = 0;
+
 function p (url) {
-    request(url, ({body}) => {
+    return request(url, ({body}) => {
         const bodyStr = iconv.decode(body, "gbk");
         const $ = cheerio.load(bodyStr);
         $("tr+tr").each((index, tr) => {
@@ -26,13 +28,29 @@ function p (url) {
             console.log(`www.23zw.me 写入${list.length}条`);
             appendFileSync(filePath, list.splice(0, list.length).join("\n") + "\n");
         }
-        if($("a.next") && $("a.next").attr("href")) {
-            p($("a.next").attr("href"))
+    }).catch(() => {
+        console.log(`www.23zw.me 错误数${++errorNum}`)
+    })
+}
+
+function start() {
+    request("https://www.23zw.me/class_0_1.html", async ({body}) => {
+        const bodyStr = iconv.decode(body, "gbk");
+        const $ = cheerio.load(bodyStr);
+        const max = ~~$("#pagelink > a.last").text();
+        const promise = [];
+        for (let i = 1; i <= max; i++) {
+            const req = p(`https://www.23zw.me/class_0_${i}.html`);
+            if (promise.length < 5) {
+                promise.push(req)
+            } else {
+                await Promise.all(promise.splice(0, promise.length).concat(req))
+            }
         }
     })
 }
 
-p("https://www.23zw.me/class_0_1.html")
+start();
 
 process.once("exit", (code) => {
     if (!code) {
