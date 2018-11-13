@@ -57,15 +57,8 @@ function getSourceKey(source) {
   }
 }
 
-async function start(list, modules) {
-  const detailScript = Object.values(modules).reduce((a, {dir, detail}) => {
-    return {
-      ...a,
-      [getSourceKey(dir)]: detail
-    }
-  }, {})
-  for (let item of list) {
-    const detail = {};
+async function handleItem(item, detailScript) {
+  const detail = {};
     const sources = item.sources.split(",").sort((a, b) => sortMap[getSourceKey(a)] - sortMap[getSourceKey(b)]);
     for (const source of sources) {
       let falg;
@@ -86,6 +79,25 @@ async function start(list, modules) {
       ...detail,
       ...item,
     });
+    return true;
+}
+
+async function start(list, modules) {
+  const detailScript = Object.values(modules).reduce((a, {dir, detail}) => {
+    return {
+      ...a,
+      [getSourceKey(dir)]: detail
+    }
+  }, {})
+  const promise = [];
+
+  for (let i = 0, l = list.length; i < l; i++) {
+    const hand = handleItem(list[i], detailScript);
+    if (promise.length < 5) {
+      promise.push(hand);
+    } else {
+      await Promise.all(promise.splice(0, promise.length).concat(hand));
+    }
     if (perfect.length > 2000) {
       console.log(`perfect 写入${perfect.length}条`);
       appendFileSync(filePath, perfect.splice(0, perfect.length).join("\n") + "\n");

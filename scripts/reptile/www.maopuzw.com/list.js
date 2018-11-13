@@ -8,6 +8,7 @@ const filePath = resolve(__dirname, "./list.txt");
 if(existsSync(filePath)) unlinkSync(filePath);
 
 const list = [];
+let errorNum = 0;
 
 function p (url, i) {
     request(url, ({body}) => {
@@ -29,11 +30,30 @@ function p (url, i) {
         if($("a.next") && $("a.next").attr("href")) {
             p($("a.next").attr("href"), i);
         }
+    }).catch(() => {
+        console.log(`www.maopuzw.com 错误数${++errorNum}`)
+    })
+}
+
+function start(i) {
+    request(`https://www.maopuzw.com/book/sort${i}/0/1.html`, async ({body}) => {
+        const bodyStr = iconv.decode(body, "gbk");
+        const $ = cheerio.load(bodyStr);
+        const max = ~~$("#pagelink > a.last").text();
+        const promise = [];
+        for (let j = 1; j <= max; j++) {
+            const req = p(`https://www.maopuzw.com/book/sort${i}/0/${j}.html`, i);
+            if (promise.length < 2) {
+                promise.push(req)
+            } else {
+                await Promise.all(promise.splice(0, promise.length).concat(req))
+            }
+        }
     })
 }
 
 for(let i = 1; i < 11; i++) {
-    p(`https://www.maopuzw.com/book/sort${i}/0/1.html`, i)
+    start(i)
 }
 
 process.once("exit", (code) => {
