@@ -10,8 +10,8 @@ if(existsSync(filePath)) unlinkSync(filePath);
 const list = [];
 let errorNum = 0;
 
-function p (url, i) {
-    request(url, ({body}) => {
+async function p (url, i) {
+    await request(url, ({body}) => {
         const bodyStr = iconv.decode(body, "gbk");
         const $ = cheerio.load(bodyStr);
         const c = $(".blockcontent .ulitem li").slice(i, 1+i).text().replace(/(小说|类型)/g, "") || "其他";
@@ -30,6 +30,7 @@ function p (url, i) {
     }).catch(() => {
         console.log(`www.maopuzw.com 错误数${++errorNum}`)
     })
+    return true;
 }
 
 function start(i) {

@@ -11,8 +11,8 @@ const list = [];
 
 let errorNum = 0;
 
-function p (url) {
-    return request(url, ({body}) => {
+async function p (url) {
+    await request(url, ({body}) => {
         const bodyStr = iconv.decode(body, "gbk");
         const $ = cheerio.load(bodyStr);
         $("tr+tr").each((index, tr) => {
@@ -31,6 +31,7 @@ function p (url) {
     }).catch(() => {
         console.log(`www.23zw.me 错误数${++errorNum}`)
     })
+    return true;
 }
 
 function start() {
