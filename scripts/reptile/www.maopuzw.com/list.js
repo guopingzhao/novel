@@ -23,7 +23,7 @@ async function p (url, i) {
                 author: $(tr).find("td").slice(2, 3).text(), 
             }));
         })
-        if (list.length > 10000) {
+        if (list.length > 1000) {
             console.log(`www.maopuzw.com 写入${list.length}条`);
             appendFileSync(filePath, list.splice(0, list.length).join("\n") + "\n");
         }
@@ -32,7 +32,7 @@ async function p (url, i) {
     })
     return true;
 }
-
+let step = 1;
 function start(i) {
     request(`https://www.maopuzw.com/book/sort${i}/0/1.html`, async ({body}) => {
         const bodyStr = iconv.decode(body, "gbk");
@@ -41,26 +41,7 @@ function start(i) {
         const promise = [];
         for (let j = 1; j <= max; j++) {
             const req = p(`https://www.maopuzw.com/book/sort${i}/0/${j}.html`, i);
-            if (promise.length < 2) {
-                promise.push(req)
-            } else {
-                await Promise.all(promise.splice(0, promise.length).concat(req))
-            }
-        }
-    }).catch(() => {
-        console.log(`www.maopuzw.com 错误数${++errorNum}`)
-    })
-}
-
-function start(i) {
-    request(`https://www.maopuzw.com/book/sort${i}/0/1.html`, async ({body}) => {
-        const bodyStr = iconv.decode(body, "gbk");
-        const $ = cheerio.load(bodyStr);
-        const max = ~~$("#pagelink > a.last").text();
-        const promise = [];
-        for (let j = 1; j <= max; j++) {
-            const req = p(`https://www.maopuzw.com/book/sort${i}/0/${j}.html`, i);
-            if (promise.length < 2) {
+            if (promise.length < step) {
                 promise.push(req)
             } else {
                 await Promise.all(promise.splice(0, promise.length).concat(req))
@@ -68,7 +49,7 @@ function start(i) {
         }
     })
 }
-
+console.log(`www.maopuzw.com 爬取开始`);
 for(let i = 1; i < 11; i++) {
     start(i)
 }

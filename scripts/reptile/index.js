@@ -1,5 +1,6 @@
 const { fork, execSync } = require("child_process");
 const { resolve } = require("path");
+const { writeFileSync, openSync, readFileSync } = require("fs");
 const moment = require("moment");
 
 execSync(`rm -rf ${__dirname}/**/*.txt`);
@@ -15,6 +16,15 @@ const qukankanDir = resolve(__dirname, "./www.7kankan.com");
 const aoshiDir = resolve(__dirname, "./www.23zw.me");
 const maopuDir = resolve(__dirname, "./www.maopuzw.com");
 const quanbenDir = resolve(__dirname, "./www.qb520.org");
+
+const outLogPath = resolve(__dirname, "child-out.log");
+const errorLogPath = resolve(__dirname, "child-error.log");
+
+writeFileSync(outLogPath, "");
+writeFileSync(errorLogPath, "");
+
+const outLog = openSync(outLogPath, "w");
+const errorLog = openSync(errorLogPath, "w");
 
 const modules = {
     [qukankan]: {
@@ -43,15 +53,18 @@ const modules = {
     },
 }
 
-function forkChild(m, cb=() => {}) {
+function forkChild(m, cb = () => { }) {
     return new Promise((res) => {
-        const child = fork(m);
+        console.log(`fork ${m}`);
+        const child = fork(m, { stdio: ["ignore", outLog, errorLog, 'ipc'] });
         cb(child);
         child.on("error", () => {
             console.log("error")
         })
         child.once("exit", (code) => {
-            if (code) {
+            console.log(`${m} exit, code:${code}`);
+            if (code !== 0) {
+                console.log(`${m} restart`);
                 res(forkChild(m, cb));
             } else {
                 res(true);
@@ -125,7 +138,7 @@ async function start() {
     console.log("==========列表爬取结束，开始合并列表==========");
     const list = await mergeList()
     console.log("==========合并列表完成，开始完善列表信息==========");
-    await forkChild(resolve(__dirname, "perfect.js"), (child) => child.send({list, modules}));
+    await forkChild(resolve(__dirname, "perfect.js"), (child) => child.send({ list, modules }));
     console.log("==========完善列表信息结束==========");
     console.log(`==========用时: ${Date.now() - start}ms==========`);
     console.log(`==========结束时间: ${moment().format("YYYY-MM-DD HH:mm:ss")}==========`);

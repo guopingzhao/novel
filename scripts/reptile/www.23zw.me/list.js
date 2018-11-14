@@ -24,7 +24,7 @@ async function p (url) {
                 author: td.slice(4, 5).text(),
             }));
         })
-        if (list.length > 10000) {
+        if (list.length > 1000) {
             console.log(`www.23zw.me 写入${list.length}条`);
             appendFileSync(filePath, list.splice(0, list.length).join("\n") + "\n");
         }
@@ -33,7 +33,7 @@ async function p (url) {
     })
     return true;
 }
-
+let step = 5;
 function start() {
     request("https://www.23zw.me/class_0_1.html", async ({body}) => {
         const bodyStr = iconv.decode(body, "gbk");
@@ -42,7 +42,7 @@ function start() {
         const promise = [];
         for (let i = 1; i <= max; i++) {
             const req = p(`https://www.23zw.me/class_0_${i}.html`);
-            if (promise.length < 5) {
+            if (promise.length < step) {
                 promise.push(req)
             } else {
                 await Promise.all(promise.splice(0, promise.length).concat(req))
@@ -50,7 +50,7 @@ function start() {
         }
     })
 }
-
+console.log(`www.23zw.me 爬取开始`);
 start();
 
 process.once("exit", (code) => {
