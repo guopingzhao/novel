@@ -83,12 +83,14 @@ async function handleItem(item, detailScript) {
 }
 
 async function start(list, modules) {
+  console.log("开始准备脚本");
   const detailScript = Object.values(modules).reduce((a, {dir, detail}) => {
     return {
       ...a,
-      [getSourceKey(dir)]: detail
+      [getSourceKey(dir)]: require(detail)
     }
   }, {})
+  console.log("脚本准备结束");
   const promise = [];
 
   for (let i = 0, l = list.length; i < l; i++) {
@@ -98,7 +100,7 @@ async function start(list, modules) {
     } else {
       await Promise.all(promise.splice(0, promise.length).concat(hand));
     }
-    if (perfect.length > 2000) {
+    if (perfect.length > 100) {
       console.log(`perfect 写入${perfect.length}条`);
       appendFileSync(filePath, perfect.splice(0, perfect.length).join("\n") + "\n");
     }

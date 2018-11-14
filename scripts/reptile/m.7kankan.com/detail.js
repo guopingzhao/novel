@@ -22,7 +22,9 @@ module.exports = async function p (url) {
     };
 }
 
-module.exports.catalogScript = async function catalogScript (url) {
+module.exports.catalogScript = catalogScript;
+
+async function catalogScript (url) {
     const catalog = [];
     const {body, status} = await request(url, {mobile: true});
     if (status !== 200) return;
