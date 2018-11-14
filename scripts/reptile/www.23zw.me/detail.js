@@ -10,13 +10,8 @@ module.exports = async function p (url, i) {
     const name = $("#container > div.topr > div.chapter_list_novel_title > h1").text();
     const cover = "https://www.23zw.me" + $("#container > div.cover > img").attr("src");
     const brief = $("#container > div.topr > div.intro").text().trim().replace(/.*简介：?/, "");
-    const catalog = [];
-    $("#chapter_list a").each((index, a) => {
-        catalog.push({
-            name: $(a).text(),
-            addr: url.replace("index.html", $(a).attr("href"))
-        })
-    })
+    const catalog = await catalogScript(url);
+    
     return {
         name,
         catalogAddr: url,
@@ -24,4 +19,18 @@ module.exports = async function p (url, i) {
         cover,
         catalog
     }
+}
+
+module.exports.catalogScript = async function catalogScript (url) {
+    const catalog = [];
+    const catalogPage = await request(url);
+    if (catalogPage.status !== 200) return catalog;
+    const catalogPageBodyStr = iconv.decode(catalogPage.body, "gbk");
+    cheerio.load(catalogPageBodyStr)("#chapter_list a").each((index, a) => {
+        catalog.push({
+            name: $(a).text(),
+            addr: url.replace("index.html", $(a).attr("href"))
+        })
+    })
+    return catalog;
 }

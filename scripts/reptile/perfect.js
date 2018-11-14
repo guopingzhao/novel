@@ -6,7 +6,7 @@ if (existsSync(filePath)) unlinkSync(filePath)
 
 const qukankan = "www.7kankan.com";
 const aoshi = "www.23zw.me";
-const maopu = "www.maopuzw.com";
+const maopu = "m.maopuzw.com";
 const quanben = "www.qb520.org";
 
 const sortMap = {

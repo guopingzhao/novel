@@ -1,9 +1,9 @@
 const { fork, execSync } = require("child_process");
 const { resolve } = require("path");
-const { writeFileSync, openSync, readFileSync } = require("fs");
+const { writeFileSync, openSync, readFileSync, existsSync } = require("fs");
 const moment = require("moment");
 
-execSync(`rm -rf ${__dirname}/**/*.txt`);
+// execSync(`rm -rf ${__dirname}/**/*.txt`);
 
 // module name
 const qukankan = "qukankan";
@@ -14,7 +14,7 @@ const quanben = "quanben";
 // module root path
 const qukankanDir = resolve(__dirname, "./www.7kankan.com");
 const aoshiDir = resolve(__dirname, "./www.23zw.me");
-const maopuDir = resolve(__dirname, "./www.maopuzw.com");
+const maopuDir = resolve(__dirname, "./m.maopuzw.com");
 const quanbenDir = resolve(__dirname, "./www.qb520.org");
 
 const outLogPath = resolve(__dirname, "child-out.log");
@@ -79,23 +79,30 @@ async function mergeList() {
     let list = [];
 
     txts.forEach((file) => {
-        const items = JSON.parse(readFileSync(file).toString().trim());
-        if (Array.isArray(items)) {
-            list = list.concat(items)
+        if (!existsSync(file)) return;
+        try {
+            const items = readFileSync(file).toString().trim().split(/\s*\n\s*/);
+            if (Array.isArray(items)) {
+                list = list.concat(items)
+            }
+        } catch (error) {
+            console.log("读取list文件反序列化失败", error);
         }
     })
 
     const listMap = {};
     const categorys = [];
-
+    const authors = [];
     list.forEach((item) => {
         try {
             item = JSON.parse(item.replace(/,\s*$/, ""));
             const key = `${item.name}<>${item.author}`;
             const addr = item.addr;
             const category = item.class;
+            const author = item.author;
             const isExist = key in listMap;
             if (!categorys.includes(category)) categorys.push(category);
+            if (!authors.includes(author)) authors.push(author);
             delete item.addr;
             delete item.class;
             listMap[key] = {
@@ -117,7 +124,8 @@ async function mergeList() {
     })
 
     writeFileSync(resolve(__dirname, "./list.json"), JSON.stringify(Object.values(listMap), null, 2));
-    writeFileSync(resolve(__dirname, "./categorys.json"), JSON.stringify(Object.values(categorys), null, 2));
+    writeFileSync(resolve(__dirname, "./categorys.json"), JSON.stringify(categorys, null, 2));
+    writeFileSync(resolve(__dirname, "./authors.json"), JSON.stringify(authors, null, 2));
     return Object.values(listMap);
 }
 
@@ -143,8 +151,8 @@ async function start() {
     console.log(`==========用时: ${Date.now() - start}ms==========`);
     console.log(`==========结束时间: ${moment().format("YYYY-MM-DD HH:mm:ss")}==========`);
 }
-
-start();
+mergeList()
+// start();
 
 process.once("exit", (code) => {
     if (!code) {

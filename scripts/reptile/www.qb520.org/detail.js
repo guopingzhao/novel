@@ -10,13 +10,7 @@ module.exports = async function p (url) {
     const name = $("#box > h1").text();
     const cover = "";
     const brief = "";
-    const catalog = [];
-    $("body > table a").each((index, a) => {
-        catalog.push({
-            name: $(a).text(),
-            addr: `http://www.qb520.org${$(a).attr("href")}`
-        })
-    })
+    const catalog = await catalogScript(url);
     return {
         name,
         catalogAddr: url,
@@ -24,4 +18,18 @@ module.exports = async function p (url) {
         cover,
         catalog
     };
+}
+
+module.exports.catalogScript = async function catalogScript (url) {
+    const catalog = [];
+    const catalogPage = await request(url);
+    if (catalogPage.status !== 200) return catalog;
+    const catalogPageBodyStr = iconv.decode(catalogPage.body, "gbk");
+    cheerio.load(catalogPageBodyStr)("body > table a").each((index, a) => {
+        catalog.push({
+            name: $(a).text(),
+            addr: `http://www.qb520.org${$(a).attr("href")}`
+        })
+    })
+    return catalog;
 }

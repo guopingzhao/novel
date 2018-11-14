@@ -13,15 +13,7 @@ module.exports = async function p (url) {
     const str = $("#content tr:nth-child(5) table td:nth-child(2)").text().trim();
     const index = str.indexOf("内容简介");
     const brief = str.substring(index + 5);
-    const catalogPage = await request(addr)
-    const catalogPageBodyStr = iconv.decode(catalogPage.body, "gbk");
-    const catalog = [];
-    cheerio.load(catalogPageBodyStr)(".uclist dd a").each((index, a) => {
-        catalog.push({
-            name: $(a).text(),
-            addr: addr.replace("index.html", $(a).attr("href"))
-        })
-    })
+    const catalog = await catalogScript(addr);
     return {
         name,
         catalogAddr: addr,
@@ -29,4 +21,18 @@ module.exports = async function p (url) {
         cover,
         catalog
     }
+}
+
+module.exports.catalogScript = async function catalogScript (url) {
+    const catalog = [];
+    const catalogPage = await request(url)
+    if (catalogPage.status !== 200) return catalog;
+    const catalogPageBodyStr = iconv.decode(catalogPage.body, "gbk");
+    cheerio.load(catalogPageBodyStr)(".uclist dd a").each((index, a) => {
+        catalog.push({
+            name: $(a).text(),
+            addr: addr.replace("index.html", $(a).attr("href"))
+        })
+    })
+    return catalog;
 }

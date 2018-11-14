@@ -50,7 +50,7 @@ function start(i) {
         }
     })
 }
-console.log(`www.maopuzw.com 爬取开始`);
+console.log(`www.qb520.org 爬取开始`);
 for(let i = 1; i < 11; i++) {
     start(i);
 }
