@@ -1,4 +1,4 @@
-const { unlinkSync, existsSync ,appendFileSync } = require("fs");
+const { unlinkSync, existsSync, writeFileSync } = require("fs");
 const { resolve } = require("path");
 
 const filePath = resolve(__dirname, "perfect.json");
@@ -27,8 +27,8 @@ function mergeCatalog(source, obj = []) {
       Math.max(0, index - offset),
       Math.min(sourceL, index + offset)
     ).find((item) => item.name === name);
-    if (catalog && !catalog.addr.includes(add)) {
-      catalog.addr = `${catalog.addr},${add}`
+    if (catalog && !catalog.addr.includes(addr)) {
+      catalog.addr = `${catalog.addr},${addr}`
     }
   })
 }
@@ -100,12 +100,12 @@ async function start(list, modules) {
     } else {
       await Promise.all(promise.splice(0, promise.length).concat(hand));
     }
-    if (perfect.length > 100) {
+    if (perfect.length % 100 === 0) {
       console.log(`perfect 写入${perfect.length}条`);
-      appendFileSync(filePath, perfect.splice(0, perfect.length).join("\n") + "\n");
+      // appendFileSync(filePath, perfect.splice(0, perfect.length).join("\n") + "\n");
     }
   }
-  appendFileSync(filePath, perfect.join("\n"));
+  writeFileSync(filePath, JSON.stringify(perfect));
 }
 
 process.once("message", ({ list, modules }) => {

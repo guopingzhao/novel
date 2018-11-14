@@ -141,7 +141,7 @@ function mergeList() {
     console.log("合并列表完成，开始写入文件");
     writeFileSync(resolve(__dirname, "./list.json"), JSON.stringify(Object.values(listMap), null, 2));
     writeFileSync(resolve(__dirname, "./categorys.json"), JSON.stringify(categorys, null, 2));
-    writeFileSync(resolve(__dirname, "./authors.json"), JSON.stringify(authors, null, 2));
+    writeFileSync(resolve(__dirname, "./authors.json"), JSON.stringify(Object.keys(authors), null, 2));
     return Object.values(listMap);
 }
 

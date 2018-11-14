@@ -44,8 +44,7 @@ async function catalogScript (url) {
         }
     });
     if(next) {
-        console.log("http://m.7kankan.com catalog 下一页");
-        return [...catalog, ...await catalogFunc(host + next)];
+        return [...catalog, ...await catalogScript(host + next)];
     }
     return catalog;
 }

@@ -43,8 +43,7 @@ async function catalogScript (url) {
         }
     });
     if(next) {
-        console.log(host, " catalog 下一页");
-        return [...catalog, ...await catalogFunc(host + next)];
+        return [...catalog, ...await catalogScript(host + next)];
     }
     return catalog;
 }
