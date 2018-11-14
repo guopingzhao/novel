@@ -10,8 +10,8 @@ if(existsSync(filePath)) unlinkSync(filePath);
 const list = [];
 let errorNum = 0;
 
-function p (url, i) {
-    request(url, ({body}) => {
+async function p (url, i) {
+    await request(url, ({body}) => {
         const bodyStr = iconv.decode(body, "gbk");
         const $ = cheerio.load(bodyStr);
         const c = $(".blockcontent .ulitem li").slice(i, 1+i).text().replace(/(小说|类型)/g, "") || "其他";
@@ -27,8 +27,25 @@ function p (url, i) {
             console.log(`www.maopuzw.com 写入${list.length}条`);
             appendFileSync(filePath, list.splice(0, list.length).join("\n") + "\n");
         }
-        if($("a.next") && $("a.next").attr("href")) {
-            p($("a.next").attr("href"), i);
+    }).catch(() => {
+        console.log(`www.maopuzw.com 错误数${++errorNum}`)
+    })
+    return true;
+}
+
+function start(i) {
+    request(`https://www.maopuzw.com/book/sort${i}/0/1.html`, async ({body}) => {
+        const bodyStr = iconv.decode(body, "gbk");
+        const $ = cheerio.load(bodyStr);
+        const max = ~~$("#pagelink > a.last").text();
+        const promise = [];
+        for (let j = 1; j <= max; j++) {
+            const req = p(`https://www.maopuzw.com/book/sort${i}/0/${j}.html`, i);
+            if (promise.length < 2) {
+                promise.push(req)
+            } else {
+                await Promise.all(promise.splice(0, promise.length).concat(req))
+            }
         }
     }).catch(() => {
         console.log(`www.maopuzw.com 错误数${++errorNum}`)

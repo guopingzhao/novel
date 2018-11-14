@@ -98,7 +98,7 @@ async function mergeList() {
                         : `${listMap[key].sources},${addr}`
                     : addr
             }
-        } catch {
+        } catch (error) {
             console.log(item.replace(/,\s*$/, ""))
         }
     })
