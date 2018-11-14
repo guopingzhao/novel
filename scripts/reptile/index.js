@@ -3,8 +3,6 @@ const { resolve } = require("path");
 const { writeFileSync, openSync, readFileSync, existsSync } = require("fs");
 const moment = require("moment");
 
-
-
 // module name
 const qukankan = "qukankan";
 const aoshi = "aoshi";
@@ -12,7 +10,7 @@ const maopu = "maopu";
 const quanben = "quanben";
 
 // module root path
-const qukankanDir = resolve(__dirname, "./www.7kankan.com"); // a
+const qukankanDir = resolve(__dirname, "./m.7kankan.com"); // a
 const aoshiDir = resolve(__dirname, "./www.23zw.me");        // b
 const maopuDir = resolve(__dirname, "./m.maopuzw.com");      // c
 const quanbenDir = resolve(__dirname, "./www.qb520.org");    // d

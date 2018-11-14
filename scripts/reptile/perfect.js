@@ -4,7 +4,7 @@ const { resolve } = require("path");
 const filePath = resolve(__dirname, "perfect.json");
 if (existsSync(filePath)) unlinkSync(filePath)
 
-const qukankan = "www.7kankan.com";
+const qukankan = "m.7kankan.com";
 const aoshi = "www.23zw.me";
 const maopu = "m.maopuzw.com";
 const quanben = "www.qb520.org";
