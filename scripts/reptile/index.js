@@ -3,7 +3,7 @@ const { resolve } = require("path");
 const { writeFileSync, openSync, readFileSync, existsSync } = require("fs");
 const moment = require("moment");
 
-// execSync(`rm -rf ${__dirname}/**/*.txt`);
+execSync(`rm -rf ${__dirname}/**/*.txt`);
 
 // module name
 const qukankan = "qukankan";
@@ -151,8 +151,8 @@ async function start() {
     console.log(`==========用时: ${Date.now() - start}ms==========`);
     console.log(`==========结束时间: ${moment().format("YYYY-MM-DD HH:mm:ss")}==========`);
 }
-mergeList()
-// start();
+
+start();
 
 process.once("exit", (code) => {
     if (!code) {
