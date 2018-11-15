@@ -29,7 +29,7 @@ async function catalogScript (url) {
     const $ = cheerio.load(catalogPageBodyStr);
     $("body > table a").each((index, a) => {
         catalog.push({
-            name: $(a).text(),
+            name: $(a).text().trim(),
             addr: `http://www.qb520.org${$(a).attr("href")}`
         })
     })

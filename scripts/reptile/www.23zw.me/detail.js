@@ -30,7 +30,7 @@ async function catalogScript (url) {
     const $ = cheerio.load(catalogPageBodyStr);
     $("#chapter_list a").each((index, a) => {
         catalog.push({
-            name: $(a).text(),
+            name: $(a).text().trim(),
             addr: url.replace("index.html", $(a).attr("href"))
         })
     })

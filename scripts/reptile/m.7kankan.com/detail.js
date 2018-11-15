@@ -33,7 +33,7 @@ async function catalogScript (url) {
 
     $("#index > div.cover > ul > li:nth-child(1) > a").each((index, a) => {
         catalog.push({
-            name: $(a).text(),
+            name: $(a).text().trim(),
             addr: `${host}${$(a).attr("href")}`
         })
     })

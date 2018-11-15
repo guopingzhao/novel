@@ -31,6 +31,8 @@ function assign(source, obj = {}) {
   for (const k in obj) {
     if (k === "catalog" && !!source[k]) {
       mergeCatalog(source[k], obj[k]);
+    } else if(k === "catalogAddr" && !!source[k]) {
+      source[k] = `${source[k]},${obj[k]}`
     } else if (!!source[k]) {
       continue;
     } else if (obj[k]) {
@@ -99,7 +101,7 @@ async function start(list, modules) {
   }
   await Promise.all(promise.splice(0, promise.length));
   console.log(`perfect ${process.pid} 完成${++num}次`);
-  if(process.send) process.send(perfect.splice(0, perfect.length));
+  if(process.send) process.send(perfect.splice(0, perfect.length).map((item) => JSON.stringify(item)));
 }
 console.log(process.pid, "准备就绪");
 process.on("message", ({ list, modules }) => {

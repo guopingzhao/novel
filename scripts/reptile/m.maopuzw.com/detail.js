@@ -32,7 +32,7 @@ async function catalogScript (url) {
 
     $(".chapter a").each((index, a) => {
         catalog.push({
-            name: $(a).text(),
+            name: $(a).text().trim(),
             addr: `${host}${$(a).attr("href")}`
         })
     })

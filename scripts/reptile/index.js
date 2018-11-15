@@ -1,5 +1,5 @@
 const { resolve } = require("path");
-const { writeFileSync, openSync, readFileSync, existsSync } = require("fs");
+const { writeFileSync, openSync, readFileSync, existsSync, appendFileSync } = require("fs");
 const moment = require("moment");
 const { forkChild } = require("../../src/util/tools");
 
@@ -63,18 +63,27 @@ const defaultMaxProcessCoef = 4;
 
 const args = process.argv.slice(2);
 
+// 执行步骤
 const stepStr = args.find((item) => item.includes("step=")) || defaultStep;
 const steps = stepStr.replace(/step=/g, "").split(/(,|，)/).map((item="") => ~~item.trim());
 
+// 爬取源
 const sourcesStr = args.find((item) => item.includes("sources=")) || defaultSources;
 const sources = sourcesStr.replace(/sources=/g, "").split(/(,|，)/).map((item="") => item.trim());
 
+// 最大子进程数是cpu数量的多少倍
 const maxProcessCoefStr = args.find((item) => item.includes("maxProcessCoef=")) || "";
 const maxProcessCoef = (~~maxProcessCoefStr.replace(/maxProcessCoef=/g, "")) || defaultMaxProcessCoef;
 
+// 第三步每次完善几条
 const perNumfStr = args.find((item) => item.includes("perNum=")) || "";
 const perNum = (~~perNumfStr.replace(/perNum=/g, "")) || 9;
 
+// 第三步完善时跳过多少条
+const skipNumfStr = args.find((item) => item.includes("skipNum=")) || "";
+const skipNum = (~~skipNumfStr.replace(/skipNum=/g, "")) || 0;
+
+// 最大子进程数
 const maxChildProcessNum = ~~(require("os").cpus().length * maxProcessCoef) || 2;
 
 function mergeList() {
@@ -147,32 +156,42 @@ async function reptileList() {
     )
 }
 
-const perfectList = [];
 let lock = 0;
-
+let perfectNum = 0;
 async function perfect(list=[]) {
+    const perfectPath = resolve(__dirname, "perfect.txt");
+
+    if (skipNum) {
+        list = list.slice(skipNum);
+    } else {
+        writeFileSync(perfectPath, "");
+    }
+
     const forks = [];
     const childs = [];
     let j = 0, partNum = perNum, max = Math.ceil(list.length / partNum);
-    console.log(`每次整理${partNum}条，最多整理${max}次，开启${maxChildProcessNum}个子进程整理`);
     for (let i = 0; i < maxChildProcessNum; i++) {
         forks.push(forkChild(resolve(__dirname, "perfect.js"), forkOptions, (child) => {
             childs.push(child);
             child.send({ list: list.slice(j * partNum, (++j * partNum)), modules });
-            child.once("message", (message) => {
-                if (Array.isArray(message)) {
-                    perfectList.push(...message);
-                    while(lock){}
-                    if ((lock = ~lock) && j < max) {
-                        child.send({ list: list.slice(j * partNum, (++j * partNum)), modules });
+            child.on("message", (message) => {
+                while(lock){}
+                if ((lock = ~lock)) {
+                    if (Array.isArray(message)) {
+                        appendFileSync(perfectPath, message.join("\n") + "\n");
                     }
-                    lock = ~lock; 
-                    console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")} 已整理${perfectList.length}条`)
+                    if ( j < max) {
+                        child.send({ list: list.slice(j * partNum, ((++j) * partNum)), modules });
+                    } else {
+                        child.disconnect(0);
+                    }
+                    console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")} ${perfectNum += (message.length || partNum)}条`)
                 }
+                lock = ~lock; 
             })
         }));
     }
-
+    console.log(`一共需要整理${list.length}条，每次整理${partNum}条，最多整理${max}次，开启${maxChildProcessNum}个子进程整理: ${childs.map((item) => item.pid).join()}`);
     await Promise.all(forks);
 }
 
@@ -205,6 +224,8 @@ async function start() {
     }
     
     console.log("==========完善列表信息结束==========");
+
+
     console.log(`==========用时: ${Date.now() - start}ms==========`);
     console.log(`==========结束时间: ${moment().format("YYYY-MM-DD HH:mm:ss")}==========`);
 }
