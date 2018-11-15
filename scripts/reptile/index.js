@@ -2,7 +2,7 @@ const { fork } = require("child_process");
 const { resolve } = require("path");
 const { writeFileSync, openSync, readFileSync, existsSync } = require("fs");
 const moment = require("moment");
-
+const { forkChild } = require("../../src/util/tools");
 
 
 // module name
@@ -25,6 +25,7 @@ writeFileSync(errorLogPath, "");
 
 const outLog = openSync(outLogPath, "w");
 const errorLog = openSync(errorLogPath, "w");
+const forkOptions = { isErrorExitRestart: true, stdio: ["ignore", outLog, errorLog, 'ipc'] }
 
 const modules = {
     [qukankan]: {
@@ -70,25 +71,7 @@ const sources = sourcesStr.replace(/sources=/g, "").split(/(,|，)/).map((item="
 
 
 
-function forkChild(m, cb = () => { }) {
-    return new Promise((res) => {
-        console.log(`fork ${m}`);
-        const child = fork(m, { stdio: ["ignore", outLog, errorLog, 'ipc'] });
-        cb(child);
-        child.on("error", () => {
-            console.log("error")
-        })
-        child.once("exit", (code) => {
-            console.log(`${m} exit, code:${code}`);
-            if (code !== 0) {
-                console.log(`${m} restart`);
-                res(forkChild(m, cb));
-            } else {
-                res(true);
-            }
-        })
-    })
-}
+
 
 async function mergeList() {
     const txts = Object.values(modules).map(({ dir }) => resolve(dir, "list.txt"));
@@ -150,7 +133,7 @@ async function reptileList() {
     return Promise.all(
         Object.values(modules).map(({ list, sourceAlias }) => {
             if (sources.includes(sourceAlias)) {
-                return forkChild(list);
+                return forkChild(list, forkOptions);
             } else {
                 console.log("忽略执行：", list);
                 return true;
