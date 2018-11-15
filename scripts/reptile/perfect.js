@@ -1,9 +1,3 @@
-const { unlinkSync, existsSync, writeFileSync } = require("fs");
-const { resolve } = require("path");
-
-const filePath = resolve(__dirname, "perfect.json");
-if (existsSync(filePath)) unlinkSync(filePath)
-
 const qukankan = "m.7kankan.com";
 const aoshi = "www.23zw.me";
 const maopu = "m.maopuzw.com";
@@ -63,13 +57,13 @@ async function handleItem(item, detailScript) {
     for (const source of sources) {
       let falg;
       if (source.includes(qukankan)) {
-        falg = await detailScript[qukankan](source);
+        falg = await detailScript[qukankan](source).catch(() => {});
       } else if (source.includes(aoshi)) {
-        falg = await detailScript[aoshi](source);
+        falg = await detailScript[aoshi](source).catch(() => {});
       } else if (source.includes(maopu)) {
-        falg = await detailScript[maopu](source);
+        falg = await detailScript[maopu](source).catch(() => {});
       } else if (source.includes(quanben)) {
-        falg = await detailScript[quanben](source);
+        falg = await detailScript[quanben](source).catch(() => {});
       }
       if (falg) {
         assign(detail, falg);
@@ -82,32 +76,33 @@ async function handleItem(item, detailScript) {
     return true;
 }
 
-async function start(list, modules) {
-  console.log("开始准备脚本");
-  const detailScript = Object.values(modules).reduce((a, {dir, detail}) => {
-    return {
-      ...a,
-      [getSourceKey(dir)]: require(detail)
-    }
-  }, {})
-  console.log("脚本准备结束");
-  const promise = [];
+let num = 0;
+let detailScript = null;
+const promise = [];
 
+async function start(list, modules) {
+  if (!detailScript) {
+    detailScript = Object.values(modules).reduce((a, {dir, detail}) => {
+      return {
+        ...a,
+        [getSourceKey(dir)]: require(detail)
+      }
+    }, {})
+  }
   for (let i = 0, l = list.length; i < l; i++) {
     const hand = handleItem(list[i], detailScript);
-    if (promise.length < 5) {
+    if (promise.length < 2) {
       promise.push(hand);
     } else {
       await Promise.all(promise.splice(0, promise.length).concat(hand));
     }
-    if (perfect.length % 100 === 0) {
-      console.log(`perfect 写入${perfect.length}条`);
-      // appendFileSync(filePath, perfect.splice(0, perfect.length).join("\n") + "\n");
-    }
   }
-  writeFileSync(filePath, JSON.stringify(perfect));
+  await Promise.all(promise.splice(0, promise.length));
+  console.log(`perfect ${process.pid} 完成${++num}次`);
+  if(process.send) process.send(perfect.splice(0, perfect.length));
 }
-
-process.once("message", ({ list, modules }) => {
+console.log(process.pid, "准备就绪");
+process.on("message", ({ list, modules }) => {
   start(list, modules);
 })
+

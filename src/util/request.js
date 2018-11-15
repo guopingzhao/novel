@@ -67,6 +67,7 @@ function computeOption(url, options = {}) {
             requestOptions.query = q;
             requestOptions.search = s;
             requestOptions.path = p;
+            delete requestOptions.headers['Content-Type']
         }
     } else {
         requestOptions.headers['Content-Length'] = Buffer.byteLength(bodyStr);

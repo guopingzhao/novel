@@ -1,4 +1,3 @@
-const { fork } = require("child_process");
 const { resolve } = require("path");
 const { writeFileSync, openSync, readFileSync, existsSync } = require("fs");
 const moment = require("moment");
@@ -59,7 +58,8 @@ const modules = {
 }
 
 const defaultStep = "step=1,2,3";
-const defaultSources = "sources=a,b,c,d";Object.values(modules).reduce((a, {sourceAlias}) => a ? `${a},${sourceAlias}` : sourceAlias ,"")
+const defaultSources = "sources=" + Object.values(modules).reduce((a, {sourceAlias}) => a ? `${a},${sourceAlias}` : sourceAlias ,"");
+const defaultMaxProcessCoef = 4;
 
 const args = process.argv.slice(2);
 
@@ -69,9 +69,13 @@ const steps = stepStr.replace(/step=/g, "").split(/(,|，)/).map((item="") => ~~
 const sourcesStr = args.find((item) => item.includes("sources=")) || defaultSources;
 const sources = sourcesStr.replace(/sources=/g, "").split(/(,|，)/).map((item="") => item.trim());
 
+const maxProcessCoefStr = args.find((item) => item.includes("maxProcessCoef=")) || "";
+const maxProcessCoef = (~~maxProcessCoefStr.replace(/maxProcessCoef=/g, "")) || defaultMaxProcessCoef;
 
+const perNumfStr = args.find((item) => item.includes("perNum=")) || "";
+const perNum = (~~perNumfStr.replace(/perNum=/g, "")) || 9;
 
-
+const maxChildProcessNum = ~~(require("os").cpus().length * maxProcessCoef) || 2;
 
 function mergeList() {
     const txts = Object.values(modules).map(({ dir }) => resolve(dir, "list.txt"));
@@ -143,6 +147,34 @@ async function reptileList() {
     )
 }
 
+const perfectList = [];
+let lock = 0;
+
+async function perfect(list=[]) {
+    const forks = [];
+    const childs = [];
+    let j = 0, partNum = perNum, max = Math.ceil(list.length / partNum);
+    console.log(`每次整理${partNum}条，最多整理${max}次，开启${maxChildProcessNum}个子进程整理`);
+    for (let i = 0; i < maxChildProcessNum; i++) {
+        forks.push(forkChild(resolve(__dirname, "perfect.js"), forkOptions, (child) => {
+            childs.push(child);
+            child.send({ list: list.slice(j * partNum, (++j * partNum)), modules });
+            child.once("message", (message) => {
+                if (Array.isArray(message)) {
+                    perfectList.push(...message);
+                    while(lock){}
+                    if ((lock = ~lock) && j < max) {
+                        child.send({ list: list.slice(j * partNum, (++j * partNum)), modules });
+                    }
+                    lock = ~lock; 
+                    console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")} 已整理${perfectList.length}条`)
+                }
+            })
+        }));
+    }
+
+    await Promise.all(forks);
+}
 
 async function start() {
     const start = Date.now();
@@ -165,9 +197,9 @@ async function start() {
             console.error("读取文件列表失败", error);
         }
     }
-    console.log(`==========合并列表完成，开始完善列表信息 ${moment().format("YYYY-MM-DD HH:mm:ss")}==========`);
+    console.log(`==========合并列表完成，开始完善列表信息 列表长度${list.length} ${moment().format("YYYY-MM-DD HH:mm:ss")}==========`);
     if (steps.includes(3)) {
-        await forkChild(resolve(__dirname, "perfect.js"), (child) => child.send({ list, modules }));
+        await perfect(list);
     } else {
         console.log("==========忽略完善列表==========");
     }
