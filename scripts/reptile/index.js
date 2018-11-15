@@ -12,7 +12,7 @@ const maopu = "maopu";
 const quanben = "quanben";
 
 // module root path
-const qukankanDir = resolve(__dirname, "./www.7kankan.com"); // a
+const qukankanDir = resolve(__dirname, "./m.7kankan.com"); // a
 const aoshiDir = resolve(__dirname, "./www.23zw.me");        // b
 const maopuDir = resolve(__dirname, "./m.maopuzw.com");      // c
 const quanbenDir = resolve(__dirname, "./www.qb520.org");    // d
@@ -32,28 +32,28 @@ const modules = {
         sourceAlias: "a",
         dir: qukankanDir,
         list: resolve(qukankanDir, "list.js"),
-        detail: require(resolve(qukankanDir, "detail.js")),
+        detail: resolve(qukankanDir, "detail.js"),
         content: resolve(qukankanDir, "content.js"),
     },
     [aoshi]: {
         sourceAlias: "b",
         dir: aoshiDir,
         list: resolve(aoshiDir, "list.js"),
-        detail: require(resolve(aoshiDir, "detail.js")),
+        detail: resolve(aoshiDir, "detail.js"),
         content: resolve(aoshiDir, "content.js"),
     },
     [maopu]: {
         sourceAlias: "c",
         dir: maopuDir,
         list: resolve(maopuDir, "list.js"),
-        detail: require(resolve(maopuDir, "detail.js")),
+        detail: resolve(maopuDir, "detail.js"),
         content: resolve(maopuDir, "content.js"),
     },
     [quanben]: {
         sourceAlias: "d",
         dir: quanbenDir,
         list: resolve(quanbenDir, "list.js"),
-        detail: require(resolve(quanbenDir, "detail.js")),
+        detail: resolve(quanbenDir, "detail.js"),
         content: resolve(quanbenDir, "content.js"),
     },
 }
@@ -73,11 +73,11 @@ const sources = sourcesStr.replace(/sources=/g, "").split(/(,|，)/).map((item="
 
 
 
-async function mergeList() {
+function mergeList() {
     const txts = Object.values(modules).map(({ dir }) => resolve(dir, "list.txt"));
 
     let list = [];
-
+    console.log("==========开始读取文件==========");
     txts.forEach((file) => {
         if (!existsSync(file)) return;
         try {
@@ -89,43 +89,44 @@ async function mergeList() {
             console.log("读取list文件反序列化失败", error);
         }
     })
-
+    console.log(`==========读取文件结束, 列表长度：${list.length}==========`);
     const listMap = {};
     const categorys = [];
-    const authors = [];
+    const authors = {};
     list.forEach((item) => {
         try {
             item = JSON.parse(item.replace(/,\s*$/, ""));
-            const key = `${item.name}<>${item.author}`;
-            const addr = item.addr;
-            const category = item.class;
-            const author = item.author;
-            const isExist = key in listMap;
-            if (!categorys.includes(category)) categorys.push(category);
-            if (!authors.includes(author)) authors.push(author);
-            delete item.addr;
-            delete item.class;
-            listMap[key] = {
-                ...item,
-                category: isExist
-                    ? listMap[key].category.includes(category)
-                        ? listMap[key].category
-                        : `${listMap[key].category},${category}`
-                    : category,
-                sources: isExist
-                    ? listMap[key].sources.includes(addr)
-                        ? listMap[key].sources
-                        : `${listMap[key].sources},${addr}`
-                    : addr
-            }
         } catch (error) {
-            console.log(item.replace(/,\s*$/, ""))
+            console.log(item.replace(/,\s*$/, ""));
+            return;
+        }
+        const key = `${item.name}<>${item.author}`;
+        const addr = item.addr;
+        const category = item.class;
+        const author = item.author;
+        const isExist = key in listMap;
+        if (!categorys.includes(category)) categorys.push(category);
+        authors[author] = true;
+        delete item.addr;
+        delete item.class;
+        listMap[key] = {
+            ...item,
+            category: isExist
+                ? listMap[key].category.includes(category)
+                    ? listMap[key].category
+                    : `${listMap[key].category},${category}`
+                : category,
+            sources: isExist
+                ? listMap[key].sources.includes(addr)
+                    ? listMap[key].sources
+                    : `${listMap[key].sources},${addr}`
+                : addr
         }
     })
-
+    console.log("合并列表完成，开始写入文件");
     writeFileSync(resolve(__dirname, "./list.json"), JSON.stringify(Object.values(listMap), null, 2));
     writeFileSync(resolve(__dirname, "./categorys.json"), JSON.stringify(categorys, null, 2));
-    writeFileSync(resolve(__dirname, "./authors.json"), JSON.stringify(authors, null, 2));
+    writeFileSync(resolve(__dirname, "./authors.json"), JSON.stringify(Object.keys(authors), null, 2));
     return Object.values(listMap);
 }
 
@@ -157,6 +158,7 @@ async function start() {
     if (steps.includes(2)) {
         list = await mergeList();
     } else {
+        console.log("从文件读取列表");
         try {
             list = JSON.parse(readFileSync(resolve(__dirname, "./list.json")));
         } catch (error){

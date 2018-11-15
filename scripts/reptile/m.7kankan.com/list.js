@@ -1,7 +1,7 @@
 const cheerio = require("cheerio");
 const iconv = require("iconv-lite");
-const { appendFileSync, unlinkSync, existsSync} = require("fs");
-const { resolve } = require("path");
+const {unlinkSync, appendFileSync, existsSync} = require("fs");
+const {resolve} = require("path");
 const request = require("../../../src/util/request");
 
 const filePath = resolve(__dirname, "./list.txt");
@@ -11,38 +11,36 @@ const list = [];
 let errorNum = 0;
 
 async function p (url, i) {
-    await request(url, ({body}) => {
+    await request(url, {mobile: true}, ({body}) => {
         const bodyStr = iconv.decode(body, "gbk");
         const $ = cheerio.load(bodyStr);
-        const c = $(".blockcontent").slice(0, 1).find("a").slice(i, 1 + i).text().replace(/(小说|类型)/g, "") || "其他";
-        $("tr+tr").each((index, tr) => {
+        const c = $(".content > ul li").slice(i - 1, i).text().replace(/(小说|类型)/g, "") || "其他";
+        $(".cover .line").each((index, li) => {
             list.push(JSON.stringify({
                 class: c, 
-                name: $(tr).find("td").slice(0, 1).text(), 
-                addr: $(tr).find("td a").slice(0, 1).attr("href"),
-                author: $(tr).find("td").slice(2, 3).text()
-            }))
+                name: $(li).find("a").text(), 
+                addr: "http://m.7kankan.com" + $(li).find("a").attr("href"),
+                author: $(li).text().replace(/.*\/(.*)\s*$/, "$1"), 
+            }));
         })
         if (list.length > 1000) {
-            console.log(`www.7kankan.com 写入${list.length}条`);
+            console.log(`m.7kankan.com 写入${list.length}条`);
             appendFileSync(filePath, list.splice(0, list.length).join("\n") + "\n");
         }
     }).catch(() => {
-        console.log(`www.7kankan.com 错误数${++errorNum}`)
+        console.log(`m.7kankan.com 错误数${++errorNum}`)
     })
     return true;
 }
-
 let step = 1;
-
 function start(i) {
-    request(`http://www.7kankan.com/files/article/sort${i}/0/1.htm`, async ({body}) => {
+    request(`http://m.7kankan.com/xiaoshuosort${i}/0/3.html`, {mobile: true}, async ({body}) => {
         const bodyStr = iconv.decode(body, "gbk");
         const $ = cheerio.load(bodyStr);
-        const max = ~~$("#pagelink > a.last").text();
+        const max = ~~$("#index > div.cover > div:nth-child(22)").text().replace(/.*\(.*\/(\d+).*\).*/, "$1");
         const promise = [];
         for (let j = 1; j <= max; j++) {
-            const req = p(`http://www.7kankan.com/files/article/sort${i}/0/${j}.htm`, i);
+            const req = p(`http://m.7kankan.com/xiaoshuosort${i}/0/${j}.html`, i);
             if (promise.length < step) {
                 promise.push(req)
             } else {
@@ -51,13 +49,13 @@ function start(i) {
         }
     })
 }
-console.log(`www.7kankan.com 爬取开始`);
-for(let i = 1; i < 11; i++) {
-    start(i);
+console.log(`m.7kankan.com 爬取开始`);
+for(let i = 1; i <= 9; i++) {
+    start(i)
 }
 
 process.once("exit", (code) => {
-    if(!code) {
+    if (!code) {
         appendFileSync(filePath, list.join("\n"));
     }
 })

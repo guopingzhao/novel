@@ -20,12 +20,14 @@ module.exports = async function p (url) {
     };
 }
 
-module.exports.catalogScript = async function catalogScript (url) {
+module.exports.catalogScript = catalogScript;
+async function catalogScript (url) {
     const catalog = [];
     const catalogPage = await request(url);
     if (catalogPage.status !== 200) return catalog;
     const catalogPageBodyStr = iconv.decode(catalogPage.body, "gbk");
-    cheerio.load(catalogPageBodyStr)("body > table a").each((index, a) => {
+    const $ = cheerio.load(catalogPageBodyStr);
+    $("body > table a").each((index, a) => {
         catalog.push({
             name: $(a).text(),
             addr: `http://www.qb520.org${$(a).attr("href")}`

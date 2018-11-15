@@ -1,10 +1,10 @@
-const { unlinkSync, existsSync ,appendFileSync } = require("fs");
+const { unlinkSync, existsSync, writeFileSync } = require("fs");
 const { resolve } = require("path");
 
 const filePath = resolve(__dirname, "perfect.json");
 if (existsSync(filePath)) unlinkSync(filePath)
 
-const qukankan = "www.7kankan.com";
+const qukankan = "m.7kankan.com";
 const aoshi = "www.23zw.me";
 const maopu = "m.maopuzw.com";
 const quanben = "www.qb520.org";
@@ -27,8 +27,8 @@ function mergeCatalog(source, obj = []) {
       Math.max(0, index - offset),
       Math.min(sourceL, index + offset)
     ).find((item) => item.name === name);
-    if (catalog && !catalog.addr.includes(add)) {
-      catalog.addr = `${catalog.addr},${add}`
+    if (catalog && !catalog.addr.includes(addr)) {
+      catalog.addr = `${catalog.addr},${addr}`
     }
   })
 }
@@ -83,12 +83,14 @@ async function handleItem(item, detailScript) {
 }
 
 async function start(list, modules) {
+  console.log("开始准备脚本");
   const detailScript = Object.values(modules).reduce((a, {dir, detail}) => {
     return {
       ...a,
-      [getSourceKey(dir)]: detail
+      [getSourceKey(dir)]: require(detail)
     }
   }, {})
+  console.log("脚本准备结束");
   const promise = [];
 
   for (let i = 0, l = list.length; i < l; i++) {
@@ -98,12 +100,12 @@ async function start(list, modules) {
     } else {
       await Promise.all(promise.splice(0, promise.length).concat(hand));
     }
-    if (perfect.length > 2000) {
+    if (perfect.length % 100 === 0) {
       console.log(`perfect 写入${perfect.length}条`);
-      appendFileSync(filePath, perfect.splice(0, perfect.length).join("\n") + "\n");
+      // appendFileSync(filePath, perfect.splice(0, perfect.length).join("\n") + "\n");
     }
   }
-  appendFileSync(filePath, perfect.join("\n"));
+  writeFileSync(filePath, JSON.stringify(perfect));
 }
 
 process.once("message", ({ list, modules }) => {
