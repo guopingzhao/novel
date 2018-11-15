@@ -1,14 +1,23 @@
 const {fork} = require("child_process");
 
-module.exports.forkChild = function forkChild(m, options={}, cb = () => { }) {
+module.exports.forkChild = function forkChild(m, args=[], options={}, cb = () => { }) {
+  if(typeof args === "function") {
+    cb = args;
+    args = [];
+  }
+  if (!Array.isArray(args) && typeof args === "boolean") {
+    options = args;
+    args = [];
+  }
   if (typeof options === "function") {
     cb = options;
     options = {};
   }
-  const {isErrorExitRestart, ...forkOptions} = options;
+
+  const {isErrorExitRestart=true, ...forkOptions} = options;
   return new Promise((res) => {
       console.log(`fork ${m}`);
-      const child = fork(m, forkOptions);
+      const child = fork(m, args, forkOptions);
       cb(child);
       child.on("error", () => {
           console.log("error")
