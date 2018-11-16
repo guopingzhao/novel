@@ -1,46 +1,34 @@
-const { query, join } = require("../util/mysql");
+const { query } = require("../util/mysql");
+const BaseDao = require("./base.dao");
 
-// category_id INT NOT NULL AUTO_INCREMENT,
-// category_name VARCHAR(40),
-// create_time DATETIME,
+// +---------------+-------------+------+-----+---------+----------------+
+// | Field         | Type        | Null | Key | Default | Extra          |
+// +---------------+-------------+------+-----+---------+----------------+
+// | category_id   | int(11)     | NO   | PRI | NULL    | auto_increment |
+// | category_name | varchar(40) | YES  |     | NULL    |                |
+// | create_time   | datetime    | YES  |     | NULL    |                |
+// +---------------+-------------+------+-----+---------+----------------+
 
 const tableName = "novel_category";
 
-const insertSql = `INSERT INTO ${tableName}(category_id, category_name, create_time) VALUES(0,?,?)`;
+const insertSql = `INSERT INTO ${tableName}(category_name, create_time) VALUES ?`;
 
-const querySql = `SSELECT * ${tableName}`;
 
-const queryWhereSql = (info) => `${querySql} WHERE ${join(info)}`;
-
-const deleteWhereSql = (info) => `DELETE FROM ${tableName} WHERE ${join(info)}`;
-
-const updateWhereSql = (info, condition) => `UPDATE ${tableName} SET ${join(info)} WHERE ${join(condition)}`;
-
-module.exports = {
-  async insert(name) {
-    return query(insertSql, [name, Date.now()]);
-  },
-  async query() {
-    return query(querySql);
-  },
+class CategoryDao extends BaseDao {
+  constructor(tableName) {
+    super(tableName);
+    this.insertSql = insertSql;
+  }
   async queryById(id) {
     return query(
-      queryWhereSql({category_id: id})
+      this.queryWhereSql({category_id: id})
     )
-  },
+  }
   async queryByName(name) {
     return query(
-      queryWhereSql({category_name: name})
-    )
-  },
-  async update(info, condition) {
-    return query(
-      updateWhereSql(info, condition)
-    )
-  },
-  async dellete(info) {
-    return query(
-      deleteWhereSql(info)
+      this.queryWhereSql({category_name: name})
     )
   }
 }
+
+module.exports = new CategoryDao(tableName);
