@@ -37,12 +37,9 @@ class MysqlPool extends EventEmitter {
       return pool;
     }, {})
   }
-  createConn(config={}) {
+  createConn(key) {
     const {normal, wrong} = this.connStatusMap;
-    const conn = mysql.createConnection({
-      ...this.mysqlConfig,
-      ...config
-    })
+    const conn = mysql.createConnection(this.mysqlConfig)
 
     const result = {
       conn,
@@ -50,13 +47,13 @@ class MysqlPool extends EventEmitter {
     }
 
     conn.connect();
-    conn.once("error", () => {
-      console.log(`${conn.threadId}发生错误`)
+    conn.once("error", (err) => {
+      console.error(`${key} 发生错误`, err)
       result.conn = null;
       result.status = wrong;
     })
     conn.once("end", () => {
-      console.log(`${conn.threadId}释放连接`)
+      console.log(`${key} 释放连接`)
       result.conn = null;
       result.status = normal;
     })
@@ -81,7 +78,7 @@ class MysqlPool extends EventEmitter {
       }
 
       if (vacancyOrError !== null) {
-        const conn = this.createConn();
+        const conn = this.createConn(vacancyOrError);
         this.pool[vacancyOrError] = conn;
         resolve([vacancyOrError, conn])
       } else {
@@ -119,9 +116,10 @@ class MysqlPool extends EventEmitter {
       });
 
 
-      query.once("error", () => {
-        console.log("query error");
+      query.once("error", (err) => {
+        console.error("query error", err);
         connection.status = wrong;
+        reject(err);
       })
      
       query.once("end", () => {

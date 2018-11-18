@@ -86,13 +86,15 @@ function fetch(url, options = {}, callback) {
         options = {}; // eslint-disable-line
     }
 
-    const { data, resType, ...finalOptions } = computeOption(url, options);
+    const { data, resType, timeout = 30000, ...finalOptions } = computeOption(url, options);
     const request = getRequest(url);
     return new Promise((resolve, reject) => {
         let req = null;
+        let timer = null;
         try {
             req = request(finalOptions);
         } catch (error) {
+            clearTimeout(timer);
             reject(new Error({
                 result: {
                     status: 400,
@@ -115,6 +117,7 @@ function fetch(url, options = {}, callback) {
                 resBody = Buffer.concat([resBody, chunk]);
             });
             res.on('end', () => {
+                clearTimeout(timer);
                 result.body = parseResBody(resBody, resType);
                 if (callback) {
                     callback(result);
@@ -122,6 +125,7 @@ function fetch(url, options = {}, callback) {
                 resolve(result);
             });
             res.on('error', (error) => {
+                clearTimeout(timer);
                 reject(new Error({
                     result,
                     error,
@@ -133,8 +137,18 @@ function fetch(url, options = {}, callback) {
         }
         req.end();
         req.on('error', (error) => {
+            clearTimeout(timer);
             reject(new Error(error));
         });
+
+        timer = setTimeout(() => {
+            if (req) req.abort();
+            reject(new Error({
+                status: 408,
+                statusCode: 408,
+                message: "request timeout.",
+            }));
+        }, timeout)
     });
 }
 

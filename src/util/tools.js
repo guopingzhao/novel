@@ -1,6 +1,7 @@
 const {fork} = require("child_process");
+const moment = require("moment");
 
-module.exports.forkChild = function forkChild(m, args=[], options={}, cb = () => { }) {
+function forkChild(m, args=[], options={}, cb = () => { }) {
   if(typeof args === "function") {
     cb = args;
     args = [];
@@ -37,3 +38,44 @@ module.exports.forkChild = function forkChild(m, args=[], options={}, cb = () =>
       })
   })
 }
+function datetime(data) {
+  return moment(data).format("YYYY-MM-DD HH:mm:ss");
+}
+function mutex () {
+  let lock = false;
+  const next = () => lock = false;
+  return (cb, pointer) => {
+    return (...args) => {
+      while(lock) {console.log('等待')};
+      lock = true;
+      if (pointer) {
+        cb.call(pointer, ...args, next)
+      } else {
+        cb(...args, next);
+      }
+      lock = false;
+    }
+  }
+}
+function awaitAll(promises, errorValue) {
+  let l = promises.length, result = [];
+  return new Promise((resolve) => {
+    let cb = (res) => {
+      result.push(res)
+      --l;
+      if(!l) {
+        resolve(result)
+      }
+    }
+    for (let promise of promises) {
+      promise.then(cb)
+      .catch((err) => {
+        cb(errorValue !== undefined ?  errorValue : err)
+      });
+    }
+  })
+}
+module.exports.forkChild = forkChild;
+module.exports.datetime = datetime; 
+module.exports.awaitAll = awaitAll; 
+module.exports.synclock = mutex();

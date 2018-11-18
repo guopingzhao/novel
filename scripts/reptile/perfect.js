@@ -1,7 +1,8 @@
+const {awaitAll} = require("../../src/util/tools");
 const qukankan = "m.7kankan.com";
 const aoshi = "www.23zw.me";
 const maopu = "m.maopuzw.com";
-const quanben = "www.qb520.org";
+const quanben = "m.qb520.org";
 
 const sortMap = {
   [qukankan]: 2,
@@ -10,7 +11,6 @@ const sortMap = {
   [quanben]: 3,
 }
 
-let perfect = [];
 
 function mergeCatalog(source, obj = []) {
   const sourceL = source.length;
@@ -55,32 +55,29 @@ function getSourceKey(source) {
 
 async function handleItem(item, detailScript) {
   const detail = {};
-    const sources = item.sources.split(",").sort((a, b) => sortMap[getSourceKey(a)] - sortMap[getSourceKey(b)]);
-    for (const source of sources) {
-      let falg;
-      if (source.includes(qukankan)) {
-        falg = await detailScript[qukankan](source).catch(() => {});
-      } else if (source.includes(aoshi)) {
-        falg = await detailScript[aoshi](source).catch(() => {});
-      } else if (source.includes(maopu)) {
-        falg = await detailScript[maopu](source).catch(() => {});
-      } else if (source.includes(quanben)) {
-        falg = await detailScript[quanben](source).catch(() => {});
-      }
-      if (falg) {
-        assign(detail, falg);
-      }
+  const sources = item.sources.split(",").sort((a, b) => sortMap[getSourceKey(a)] - sortMap[getSourceKey(b)]);
+  for (const source of sources) {
+    let falg;
+    if (source.includes(qukankan)) {
+      falg = await detailScript[qukankan](source).catch(() => {});
+    } else if (source.includes(aoshi)) {
+      falg = await detailScript[aoshi](source).catch(() => {});
+    } else if (source.includes(maopu)) {
+      falg = await detailScript[maopu](source).catch(() => {});
+    } else if (source.includes(quanben)) {
+      falg = await detailScript[quanben](source).catch(() => {});
     }
-    perfect.push({
-      ...detail,
-      ...item,
-    });
-    return true;
+    if (falg) {
+      assign(detail, falg);
+    }
+  }
+  return {
+    ...detail,
+    ...item,
+  };
 }
 
-let num = 0;
 let detailScript = null;
-const promise = [];
 
 async function start(list, modules) {
   if (!detailScript) {
@@ -91,17 +88,11 @@ async function start(list, modules) {
       }
     }, {})
   }
-  for (let i = 0, l = list.length; i < l; i++) {
-    const hand = handleItem(list[i], detailScript);
-    if (promise.length < 2) {
-      promise.push(hand);
-    } else {
-      await Promise.all(promise.splice(0, promise.length).concat(hand));
-    }
+  let result  = [];
+  for (let item of list) {
+    result.push(handleItem(item, detailScript));
   }
-  await Promise.all(promise.splice(0, promise.length));
-  console.log(`perfect ${process.pid} 完成${++num}次`);
-  if(process.send) process.send(perfect.splice(0, perfect.length).map((item) => JSON.stringify(item)));
+  process.send(await awaitAll(result, null));
 }
 console.log(process.pid, "准备就绪");
 process.on("message", ({ list, modules }) => {

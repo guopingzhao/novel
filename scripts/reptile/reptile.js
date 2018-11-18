@@ -1,7 +1,10 @@
 const { resolve } = require("path");
-const { writeFileSync, openSync, readFileSync, existsSync, appendFileSync } = require("fs");
+const { writeFileSync, readFileSync, existsSync, appendFileSync } = require("fs");
 const moment = require("moment");
 const { forkChild } = require("../../src/util/tools");
+const warehousingAuthor = require("../mysql/warehousing.author");
+const warehousingCategory = require("../mysql/warehousing.category");
+const warehousing = require("../mysql/warehousing.novel");
 
 console.log(process.argv)
 
@@ -12,10 +15,10 @@ const maopu = "maopu";
 const quanben = "quanben";
 
 // module root path
-const qukankanDir = resolve(__dirname, "./m.7kankan.com"); // a
+const qukankanDir = resolve(__dirname, "./m.7kankan.com");   // a
 const aoshiDir = resolve(__dirname, "./www.23zw.me");        // b
 const maopuDir = resolve(__dirname, "./m.maopuzw.com");      // c
-const quanbenDir = resolve(__dirname, "./www.qb520.org");    // d
+const quanbenDir = resolve(__dirname, "./m.qb520.org");    // d
 
 
 const modules = {
@@ -65,7 +68,7 @@ const sources = sourcesStr.replace(/sources=/g, "").split(/(,|，)/).map((item="
 
 // 最大子进程数是cpu数量的多少倍
 const maxProcessCoefStr = args.find((item) => item.includes("maxProcessCoef=")) || "";
-const maxProcessCoef = (~~maxProcessCoefStr.replace(/maxProcessCoef=/g, "")) || defaultMaxProcessCoef;
+const maxProcessCoef = parseFloat(maxProcessCoefStr.replace(/maxProcessCoef=/g, "")) || defaultMaxProcessCoef;
 
 // 第三步每次完善几条
 const perNumfStr = args.find((item) => item.includes("perNum=")) || "";
@@ -78,8 +81,12 @@ const skipNum = (~~skipNumfStr.replace(/skipNum=/g, "")) || 0;
 // 最大子进程数
 const maxChildProcessNum = ~~(require("os").cpus().length * maxProcessCoef) || 2;
 
-function mergeList() {
-    const txts = Object.values(modules).map(({ dir }) => resolve(dir, "list.txt"));
+async function mergeList() {
+    const txts = [];
+    for (const {dir, sourceAlias} of Object.values(modules)) {
+        if (sources.includes(sourceAlias)) 
+            txts.push(resolve(dir, "list.txt"))
+    }
 
     let list = [];
     console.log("==========开始读取文件==========");
@@ -129,10 +136,14 @@ function mergeList() {
         }
     })
     console.log("合并列表完成，开始写入文件");
-    writeFileSync(resolve(__dirname, "./list.json"), JSON.stringify(Object.values(listMap), null, 2));
+    const result = Object.values(listMap);
+    const authorList = Object.keys(authors);
+    writeFileSync(resolve(__dirname, "./list.json"), JSON.stringify(result, null, 2));
     writeFileSync(resolve(__dirname, "./categorys.json"), JSON.stringify(categorys, null, 2));
-    writeFileSync(resolve(__dirname, "./authors.json"), JSON.stringify(Object.keys(authors), null, 2));
-    return Object.values(listMap);
+    writeFileSync(resolve(__dirname, "./authors.json"), JSON.stringify(authorList, null, 2));
+    // await warehousingAuthor(authorList);
+    // await warehousingCategory(categorys);
+    return result;
 }
 
 async function reptileList() {
@@ -148,7 +159,6 @@ async function reptileList() {
     )
 }
 
-let lock = 0;
 let perfectNum = 0;
 async function perfect(list=[]) {
     const perfectPath = resolve(__dirname, "perfect.txt");
@@ -161,25 +171,26 @@ async function perfect(list=[]) {
 
     const forks = [];
     const childs = [];
-    let j = 0, partNum = perNum, max = Math.ceil(list.length / partNum);
+    let partNum = perNum, max = Math.ceil(list.length / partNum);
+    let spliceList = () => list.splice(Math.max(list.length - partNum, 0), partNum)
     for (let i = 0; i < maxChildProcessNum; i++) {
         forks.push(forkChild(resolve(__dirname, "perfect.js"), (child) => {
             childs.push(child);
-            child.send({ list: list.slice(j * partNum, (++j * partNum)), modules });
+            child.send({ list: spliceList(), modules });
             child.on("message", (message) => {
-                while(lock){}
-                if ((lock = ~lock)) {
-                    if (Array.isArray(message)) {
-                        appendFileSync(perfectPath, message.join("\n") + "\n");
-                    }
-                    if ( j < max) {
-                        child.send({ list: list.slice(j * partNum, ((++j) * partNum)), modules });
-                    } else {
-                        child.disconnect(0);
-                    }
-                    console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")} ${perfectNum += (message.length || partNum)}条`)
+                if (Array.isArray(message)) {
+                    message.forEach((item) => {
+                        if (item && item.catalog) {
+                            warehousing(item)
+                        };
+                    })
                 }
-                lock = ~lock; 
+                if ( list.length > 0 ) {
+                    child.send({ list: spliceList(), modules });
+                } else {
+                    child.disconnect();
+                }
+                console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")} ${perfectNum += (message.length || partNum)}条`)
             })
         }));
     }

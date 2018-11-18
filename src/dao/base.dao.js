@@ -11,7 +11,7 @@ module.exports = class BaseDao {
 
     this.queryWhereSql = (info) => `${this.querySql} WHERE ${join(info)}`;
 
-    this.deleteWhereSql = (info) => `DELETE FROM ${this.tableName} WHERE ${join(info)}`;
+    this.deleteWhereSql = (info) => `DELETE FROM ${this.tableName}${info ? ` WHERE ${join(info)}` : ""}`;
 
     this.updateWhereSql = (info, condition) => `UPDATE ${this.tableName} SET ${join(info)} WHERE ${join(condition)}`;
   }
