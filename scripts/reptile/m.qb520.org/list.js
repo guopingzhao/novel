@@ -57,7 +57,7 @@ if (cluster.isMaster) {
             $("div.cover .line").each((index, li) => {
                 const text = $(li).first().text().replace(/\[\]/, "").trim()
                 list.push(JSON.stringify({
-                    class: text.replace(/\[([^\]]*)\].+/, "$1").trim(), 
+                    class: text.replace(/\[([^\]]+)\].+/, "$1").trim(), 
                     name: text.replace(/.*\](.*)\/.*/, "$1").trim(), 
                     addr: "http://m.qb520.org" + $(li).find("a:nth-child(2)").attr("href"),
                     author: text.replace(/.*\].*\/(.*)/, "$1").trim(), 

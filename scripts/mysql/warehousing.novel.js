@@ -6,12 +6,9 @@ const {datetime} = require("../../src/util/tools");
 
 module.exports = async function warehousing({catalog=[], ...other}) {
     const {name, catalogAddr, cover, author, sources, brief, category} = other;
-    const categorys = (await Promise.all(
-        category.split(",").map((name) => {
-            return categoryDao.queryByName(name.trim())
-        })))
-        .map(({category_id}) => category_id)
-        .join();
+    const categorys = (await categoryDao.queryByNames(
+        category.split(",").map((name) => name.trim())
+        )).map(({category_id}) => category_id).join();
 
     const {author_id} = (await authorDao.queryByName(author.trim()))[0] || {author_id: 0};
     const {insertId} = await novelListDao.insert([[

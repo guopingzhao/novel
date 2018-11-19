@@ -30,6 +30,7 @@ class CategoryDao extends BaseDao {
     )
   }
   async queryByName(name) {
+    console.error(this.queryWhereSql({category_name: name}, false))
     return query(
       this.queryWhereSql({category_name: name}, false)
     )

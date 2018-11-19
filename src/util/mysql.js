@@ -146,25 +146,7 @@ module.exports.setMysqlConfig = mysqlPool.setMysqlConfig;
 module.exports.join = join;
 module.exports.like = like;
 
-module.exports.joinOrLike = (fields, connector="OR", format) => {
-  if(typeof connector === "function") {
-    format = connector;
-    connector = "OR";
-  }
-  if (!format) {
-    format = (val) => `%${val}%`
-  }
-  const parse = (k, v) => {
-    if (Array.isArray(v)) {
-      return v.reduce((sql, val) => `${sql}${sql ? ` ${connector} `: " "}${k} LIKE "${format(val)}"`, "")
-    } else {
-      return ` ${k} LIKE "${format(v)}"`
-    }
-  }
-  return Object.entries(fields).reduce((sql, [k, v]) => {
-    return `${sql}${sql ? ` ${connector} `: ""}${parse(k, v)}`
-  }, "")
-}
+module.exports.joinOrLike = joinOrLike;
 
 function join(info, connector='OR') {
   const params = Object.entries(info);
