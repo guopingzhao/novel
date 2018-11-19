@@ -1,4 +1,4 @@
-const { query, join } = require("../util/mysql");
+const { query, joinOrLike, join } = require("../util/mysql");
 
 module.exports = class BaseDao {
   constructor(tableName) {
@@ -9,7 +9,7 @@ module.exports = class BaseDao {
   initSql() {
     this.querySql = `SELECT * FROM ${this.tableName}`;
 
-    this.queryWhereSql = (info) => `${this.querySql} WHERE ${join(info)}`;
+    this.queryWhereSql = (info, isJoin=true) => `${this.querySql} WHERE ${joinOrLike(isJoin, {fields: info})}`;
 
     this.deleteWhereSql = (info) => `DELETE FROM ${this.tableName}${info ? ` WHERE ${join(info)}` : ""}`;
 

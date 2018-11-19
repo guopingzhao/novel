@@ -26,6 +26,7 @@ class MysqlPool extends EventEmitter {
     this.mysqlConfig = mysqlConfig;
     this.query = this.query.bind(this);
     this.setMysqlConfig = this.setMysqlConfig.bind(this);
+    this.setMaxListeners(max * 10)
   }
   initPool(num) {
     const keys = Object.keys(new Array(num).fill(null));
@@ -124,7 +125,9 @@ class MysqlPool extends EventEmitter {
      
       query.once("end", () => {
         connection.status = normal;
-        this.emit("queryEnd", [key, connection]);
+        if (this.listenerCount("queryEnd")) {
+          this.emit("queryEnd", [key, connection]);
+        }
       })
     })
   }
@@ -140,13 +143,71 @@ const mysqlPool = new MysqlPool();
 
 module.exports.query = mysqlPool.query;
 module.exports.setMysqlConfig = mysqlPool.setMysqlConfig;
-module.exports.join = (info) => {
+module.exports.join = join;
+module.exports.like = like;
+
+module.exports.joinOrLike = (fields, connector="OR", format) => {
+  if(typeof connector === "function") {
+    format = connector;
+    connector = "OR";
+  }
+  if (!format) {
+    format = (val) => `%${val}%`
+  }
+  const parse = (k, v) => {
+    if (Array.isArray(v)) {
+      return v.reduce((sql, val) => `${sql}${sql ? ` ${connector} `: " "}${k} LIKE "${format(val)}"`, "")
+    } else {
+      return ` ${k} LIKE "${format(v)}"`
+    }
+  }
+  return Object.entries(fields).reduce((sql, [k, v]) => {
+    return `${sql}${sql ? ` ${connector} `: ""}${parse(k, v)}`
+  }, "")
+}
+
+function join(info, connector='OR') {
   const params = Object.entries(info);
   const lastIndex = params.length - 1;
+  const parse = (k, v) => {
+    if (Array.isArray(v)) {
+      return v.reduce((sql, val) => `${sql ? ` ${connector} ` : " "}${k}="${val}"`, "")
+    } else {
+      return ` ${k}="${v}"`
+    }
+  }
   return params.reduce((sql, [k, v], index) => {
     if (index === lastIndex) {
-      return `${sql}${k}="${v}"`
+      return `${sql}${parse(k, v)}`
     }
-    return `${sql}${k}="${v}", `
+    return `${sql}${parse(k, v)}, `
   }, "")
+}
+
+function like(fields, connector="OR", format) {
+  if(typeof connector === "function") {
+    format = connector;
+    connector = "OR";
+  }
+  if (!format) {
+    format = (val) => `%${val}%`
+  }
+  const parse = (k, v) => {
+    if (Array.isArray(v)) {
+      return v.reduce((sql, val) => `${sql}${sql ? ` ${connector} `: " "}${k} LIKE "${format(val)}"`, "")
+    } else {
+      return ` ${k} LIKE "${format(v)}"`
+    }
+  }
+  return Object.entries(fields).reduce((sql, [k, v]) => {
+    return `${sql}${sql ? ` ${connector} `: ""}${parse(k, v)}`
+  }, "")
+}
+
+function joinOrLike(isJoin, options={}) {
+  const {fields, connector, format} = options;
+  if(isJoin) {
+    return join(fields, connector);
+  }
+  return like(fields, connector, format);
 }

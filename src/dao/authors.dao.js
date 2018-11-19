@@ -26,7 +26,7 @@ class CategoryDao extends BaseDao {
   }
   async queryByName(name) {
     return query(
-      this.queryWhereSql({author_name: name})
+      this.queryWhereSql({author_name: name}, false)
     )
   }
 }

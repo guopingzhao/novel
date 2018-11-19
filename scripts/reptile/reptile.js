@@ -141,8 +141,8 @@ async function mergeList() {
     writeFileSync(resolve(__dirname, "./list.json"), JSON.stringify(result, null, 2));
     writeFileSync(resolve(__dirname, "./categorys.json"), JSON.stringify(categorys, null, 2));
     writeFileSync(resolve(__dirname, "./authors.json"), JSON.stringify(authorList, null, 2));
-    // await warehousingAuthor(authorList);
-    // await warehousingCategory(categorys);
+    await warehousingAuthor(authorList);
+    await warehousingCategory(categorys);
     return result;
 }
 
@@ -229,7 +229,7 @@ async function start() {
     console.log("==========完善列表信息结束==========");
 
 
-    console.log(`==========用时: ${Date.now() - start}ms==========`);
+    console.log(`==========用时: ${((Date.now() - start) / 1000 / 60).toFixed(0)}分钟==========`);
     console.log(`==========结束时间: ${moment().format("YYYY-MM-DD HH:mm:ss")}==========`);
 }
 

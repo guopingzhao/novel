@@ -19,6 +19,11 @@ class CategoryDao extends BaseDao {
     super(tableName);
     this.insertSql = insertSql;
   }
+  async queryByIds(ids) {
+    return query(
+      this.queryWhereSql({category_id: ids})
+    )
+  }
   async queryById(id) {
     return query(
       this.queryWhereSql({category_id: id})
@@ -26,7 +31,12 @@ class CategoryDao extends BaseDao {
   }
   async queryByName(name) {
     return query(
-      this.queryWhereSql({category_name: name})
+      this.queryWhereSql({category_name: name}, false)
+    )
+  }
+  async queryByNames(names) {
+    return query(
+      this.queryWhereSql({category_name: names}, false)
     )
   }
 }

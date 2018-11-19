@@ -1,4 +1,4 @@
-const { query } = require("../util/mysql");
+const { query, like } = require("../util/mysql");
 const BaseDao = require("./base.dao");
 
 // +---------------+---------------+------+-----+---------+----------------+
@@ -17,30 +17,42 @@ const BaseDao = require("./base.dao");
 const tableName = "novel_list";
 
 const insertSql = `INSERT INTO ${tableName}(novel_name, novel_author, novel_category, novel_cover, novel_sources, novel_brief, novel_catalog, create_time, update_time) VALUES ?`;
+const searchSql = (val) => `SELECT * FROM ${tableName} WHERE ${like(val)}`
 
 class NovelListDao extends BaseDao {
   constructor(tableName) {
     super(tableName);
     this.insertSql = insertSql;
+    this.searchSql = searchSql;
+  }
+  async search(val, autorid, categoryIds) {
+    return query(
+      this.searchSql({
+        novel_name: val,
+        novel_author: autorid,
+        novel_category: categoryIds,
+        novel_brief: val
+      })
+    )
   }
   async queryById(id) {
     return query(
-      queryWhereSql({novel_id: id})
+      this.queryWhereSql({novel_id: id})
     )
   }
   async queryByName(name) {
     return query(
-      queryWhereSql({novel_name: name})
+      this.queryWhereSql({novel_name: name})
     )
   }
   async queryByCategory(queryByCategory) {
     return query(
-      queryWhereSql({novel_category: queryByCategory})
+      this.queryWhereSql({novel_category: queryByCategory})
     )
   }
   async queryByAuthor(name) {
     return query(
-      queryWhereSql({novel_author: name})
+      this.queryWhereSql({novel_author: name})
     )
   }
 }
