@@ -5,16 +5,30 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js",
+    "start": "nodemon",
     "reptile": "node scripts/reptile/index.js step=2"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@nestjs/common": "^5.4.0",
+    "@nestjs/core": "^5.4.0",
+    "@nestjs/microservices": "^5.4.0",
+    "@nestjs/testing": "^5.4.0",
+    "@nestjs/websockets": "^5.4.0",
     "cheerio": "^1.0.0-rc.2",
     "iconv-lite": "^0.4.24",
     "moment": "^2.22.2",
     "mysql": "^2.16.0",
-    "request": "^2.88.0"
+    "reflect-metadata": "^0.1.12",
+    "request": "^2.88.0",
+    "rxjs": "^6.3.3"
+  },
+  "devDependencies": {
+    "nodemon": "^1.18.6",
+    "ts-node": "^7.0.1",
+    "tsconfig-paths": "^3.7.0",
+    "tslint": "^5.11.0",
+    "typescript": "^3.1.6"
   }
 }

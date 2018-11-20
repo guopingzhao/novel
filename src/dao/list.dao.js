@@ -1,4 +1,4 @@
-const { query, like } = require("../util/mysql");
+const { query, like, findOne } = require("../util/mysql");
 const BaseDao = require("./base.dao");
 
 // +---------------+---------------+------+-----+---------+----------------+
@@ -25,20 +25,21 @@ class NovelListDao extends BaseDao {
     this.insertSql = insertSql;
     this.searchSql = searchSql;
   }
-  async search(val, autorid, categoryIds) {
+  async search(keyword="", authors, categorys, other) {
     return query(
-      this.searchSql({
-        novel_name: val,
-        novel_author: autorid,
-        novel_category: categoryIds,
-        novel_brief: val
-      })
+      this.queryWhereSql({
+        ...other,
+        novel_name: keyword,
+        novel_author: authors,
+        novel_category: categorys,
+        novel_brief: keyword
+      }, {isJoin: false, isCount: true})
     )
   }
   async queryById(id) {
-    return query(
+    return findOne(query(
       this.queryWhereSql({novel_id: id})
-    )
+    ))
   }
   async queryByName(name) {
     return query(
@@ -47,12 +48,12 @@ class NovelListDao extends BaseDao {
   }
   async queryByCategory(queryByCategory) {
     return query(
-      this.queryWhereSql({novel_category: queryByCategory})
+      this.queryWhereSql({novel_category: queryByCategory}, {isCount: true, isJoin: false})
     )
   }
   async queryByAuthor(name) {
     return query(
-      this.queryWhereSql({novel_author: name})
+      this.queryWhereSql({novel_author: name}, {isCount: true})
     )
   }
 }

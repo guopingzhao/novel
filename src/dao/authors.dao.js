@@ -1,4 +1,4 @@
-const { query } = require("../util/mysql");
+const { query, findOne } = require("../util/mysql");
 const BaseDao = require("./base.dao");
 
 // +-------------+-------------+------+-----+---------+----------------+
@@ -20,13 +20,23 @@ class CategoryDao extends BaseDao {
     this.insertSql = insertSql;
   }
   async queryById(id) {
-    return query(
+    return findOne(query(
       this.queryWhereSql({author_id: id})
+    ))
+  }
+  async queryByIds(ids) {
+    return query(
+      this.queryWhereSql({author_id: ids})
     )
   }
   async queryByName(name) {
     return query(
-      this.queryWhereSql({author_name: name}, false)
+      this.queryWhereSql({author_name: name})
+    )
+  }
+  async queryByNames(names) {
+    return query(
+      this.queryWhereSql({author_name: names}, {isJoin: false})
     )
   }
 }

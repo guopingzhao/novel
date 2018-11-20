@@ -9,6 +9,6 @@ module.exports = function (list) {
             console.log(`成功${result.affectedRows}条`)
         })
         .catch((error) => {
-            console.log(error)
+            console.error(error)
         })
 }

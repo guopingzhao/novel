@@ -10,7 +10,7 @@ module.exports = async function warehousing({catalog=[], ...other}) {
         category.split(",").map((name) => name.trim())
         )).map(({category_id}) => category_id).join();
 
-    const {author_id} = (await authorDao.queryByName(author.trim()))[0] || {author_id: 0};
+    const {author_id} = (await authorDao.queryByName(author.trim())) || {author_id: 0};
     const {insertId} = await novelListDao.insert([[
         name, author_id, categorys, 
         cover, sources, brief, catalogAddr, 

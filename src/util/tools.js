@@ -75,7 +75,22 @@ function awaitAll(promises, errorValue) {
     }
   })
 }
+
+function list2map (list=[], field) {
+  const result = {};
+  list.forEach((item) => {
+    result[item[field]] = item;
+  })
+  return result;
+}
+
+function listObj2list(list=[], field) {
+  return list.map((item) => item[field]);
+}
+
 module.exports.forkChild = forkChild;
 module.exports.datetime = datetime; 
 module.exports.awaitAll = awaitAll; 
+module.exports.list2map = list2map; 
+module.exports.listObj2list = listObj2list; 
 module.exports.synclock = mutex();

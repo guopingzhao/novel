@@ -1,4 +1,4 @@
-const { query } = require("../util/mysql");
+const { query, findOne } = require("../util/mysql");
 const BaseDao = require("./base.dao");
 
 // +-----------------+---------------+------+-----+---------+----------------+
@@ -24,9 +24,9 @@ class CatalogDao extends BaseDao {
     this.insertSql = insertSql;
   }
   async queryById(id) {
-    return query(
+    return findOne(query(
       this.queryWhereSql({catalog_id: id})
-    )
+    ))
   }
   async queryByNovelId(id) {
     return query(

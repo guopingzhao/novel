@@ -111,6 +111,9 @@ class MysqlPool extends EventEmitter {
           cb(err);
           reject(err);
         } else {
+          if (Array.isArray(result) && result[1] && Array.isArray(result[1]) && result[1][0] && "found_rows()" in result[1][0]) {
+            result[1] = result[1][0]["found_rows()"]
+          }
           cb(result);
           resolve(result);
         }
@@ -145,25 +148,50 @@ module.exports.query = mysqlPool.query;
 module.exports.setMysqlConfig = mysqlPool.setMysqlConfig;
 module.exports.join = join;
 module.exports.like = like;
+module.exports.findOne = findOne;
+module.exports.strify = strify;
 
 module.exports.joinOrLike = joinOrLike;
 
-function join(info, connector='OR') {
-  const params = Object.entries(info);
-  const lastIndex = params.length - 1;
-  const parse = (k, v) => {
+function strify (options) {
+  const {
+    fields,
+    connector="=",
+    format=(val) => val,
+    arrValConnector = "OR"
+  } = options;
+  const res = [];
+  Object.entries(fields).forEach(([k, v]) => {
     if (Array.isArray(v)) {
-      return v.reduce((sql, val) => `${sql ? ` ${connector} ` : " "}${k}="${val}"`, "")
-    } else {
-      return ` ${k}="${v}"`
+      const arr = v.map((val) => (
+        strify({
+          ...options,
+          fields: {
+            [k]: val
+          }
+        })
+      ));
+      if (arr.length) {
+        res.push(arr.join(` ${arrValConnector} `))
+      }
+    } else if(v) {
+      res.push(`${k} ${connector} "${format(v)}"`)
     }
-  }
-  return params.reduce((sql, [k, v], index) => {
-    if (index === lastIndex) {
-      return `${sql}${parse(k, v)}`
+  })
+  return res;
+}
+
+function join(info, connector='OR') {
+  return strify({fields: info, arrValConnector: connector}).join(` OR `)
+}
+
+function findOne(res) {
+  return res.then((res) => {
+    if (Array.isArray(res)) {
+      return res[0] || null;
     }
-    return `${sql}${parse(k, v)}, `
-  }, "")
+    return null;
+  })
 }
 
 function like(fields, connector="OR", format) {
@@ -174,16 +202,8 @@ function like(fields, connector="OR", format) {
   if (!format) {
     format = (val) => `%${val}%`
   }
-  const parse = (k, v) => {
-    if (Array.isArray(v)) {
-      return v.reduce((sql, val) => `${sql}${sql ? ` ${connector} `: " "}${k} LIKE "${format(val)}"`, "")
-    } else {
-      return ` ${k} LIKE "${format(v)}"`
-    }
-  }
-  return Object.entries(fields).reduce((sql, [k, v]) => {
-    return `${sql}${sql ? ` ${connector} `: ""}${parse(k, v)}`
-  }, "")
+
+  return strify({fields, connector: "LIKE", format}).join(` ${connector} `)
 }
 
 function joinOrLike(isJoin, options={}) {

@@ -9,7 +9,15 @@ module.exports = class BaseDao {
   initSql() {
     this.querySql = `SELECT * FROM ${this.tableName}`;
 
-    this.queryWhereSql = (info, isJoin=true) => `${this.querySql} WHERE ${joinOrLike(isJoin, {fields: info})}`;
+    this.queryWhereSql = (info, {isJoin=true, isCount=false} = {}) => {
+      const size = info.size || 10;
+      const page = ~~info.page;
+      
+      delete info.page;
+      delete info.size;
+      const params = joinOrLike(isJoin, {fields: info});
+      return `SELECT ${isCount ? ` sql_calc_found_rows ` : ""} * FROM ${this.tableName}${params ? ` WHERE ${params}` : ""}${page ? ` LIMIT ${(page - 1) * size},${size}` : ""}; ${isCount ? "select found_rows()" : ""}`
+    };
 
     this.deleteWhereSql = (info) => `DELETE FROM ${this.tableName}${info ? ` WHERE ${join(info)}` : ""}`;
 
@@ -19,8 +27,8 @@ module.exports = class BaseDao {
   async insert(params) {
     return query(this.insertSql, [params]);
   }
-  async query(params) {
-    return query(params ? this.queryWhereSql(params) : this.querySql);
+  async query(params={}) {
+    return query(this.queryWhereSql(params));
   }
   async update(info, condition) {
     return query(
