@@ -14,7 +14,7 @@ const tableName = "novel_author";
 const insertSql = `INSERT INTO ${tableName}(author_name, create_time) VALUES ?`;
 
 
-class CategoryDao extends BaseDao {
+class AuthorDao extends BaseDao {
   constructor(tableName) {
     super(tableName);
     this.insertSql = insertSql;
@@ -30,9 +30,9 @@ class CategoryDao extends BaseDao {
     )
   }
   async queryByName(name) {
-    return query(
+    return findOne(query(
       this.queryWhereSql({author_name: name})
-    )
+    ))
   }
   async queryByNames(names) {
     return query(
@@ -41,4 +41,4 @@ class CategoryDao extends BaseDao {
   }
 }
 
-module.exports = new CategoryDao(tableName);
+module.exports = new AuthorDao(tableName);

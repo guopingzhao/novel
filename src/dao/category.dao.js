@@ -30,9 +30,9 @@ class CategoryDao extends BaseDao {
     ))
   }
   async queryByName(name) {
-    return query(
+    return findOne(query(
       this.queryWhereSql({category_name: name})
-    )
+    ))
   }
   async queryByNames(names) {
     return query(

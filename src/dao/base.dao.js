@@ -16,7 +16,8 @@ module.exports = class BaseDao {
       delete info.page;
       delete info.size;
       const params = joinOrLike(isJoin, {fields: info});
-      return `SELECT ${isCount ? ` sql_calc_found_rows ` : ""} * FROM ${this.tableName}${params ? ` WHERE ${params}` : ""}${page ? ` LIMIT ${(page - 1) * size},${size}` : ""}; ${isCount ? "select found_rows()" : ""}`
+      const sql = `SELECT ${isCount ? ` sql_calc_found_rows ` : ""} * FROM ${this.tableName}${params ? ` WHERE ${params}` : ""}${page ? ` LIMIT ${(page - 1) * size},${size}` : ""}; ${isCount ? "select found_rows()" : ""}`
+      return sql;
     };
 
     this.deleteWhereSql = (info) => `DELETE FROM ${this.tableName}${info ? ` WHERE ${join(info)}` : ""}`;
