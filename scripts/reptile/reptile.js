@@ -181,6 +181,7 @@ async function perfect(list=[]) {
                 if (Array.isArray(message)) {
                     message.forEach((item) => {
                         if (item && item.catalog) {
+                            ++perfectNum;
                             warehousing(item)
                         };
                     })
@@ -190,7 +191,7 @@ async function perfect(list=[]) {
                 } else {
                     child.disconnect();
                 }
-                console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")} ${perfectNum += (message.length || partNum)}条`)
+                console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")} ${perfectNum}条`)
             })
         }));
     }
