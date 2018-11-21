@@ -159,7 +159,7 @@ async function reptileList() {
     )
 }
 
-let perfectNum = 0;
+let perfectNum = 0, errorNum = 0, allNum = 0;
 async function perfect(list=[]) {
     const perfectPath = resolve(__dirname, "perfect.txt");
 
@@ -177,21 +177,35 @@ async function perfect(list=[]) {
         forks.push(forkChild(resolve(__dirname, "perfect.js"), (child) => {
             childs.push(child);
             child.send({ list: spliceList(), modules });
-            child.on("message", (message) => {
+            child.on("message", async (message) => {
                 if (Array.isArray(message)) {
-                    message.forEach((item) => {
+                    for (const item of message) {
                         if (item && item.catalog) {
                             ++perfectNum;
-                            warehousing(item)
-                        };
-                    })
+                            warehousing(item).then((result) => {
+                                if (!result) {
+                                    ++errorNum;
+                                    warehousing(item);
+                                }
+                            })
+                            
+                        } else if(!item.isReload) {
+                            item.isReload = true;
+                            list.push(item);
+                        }
+                        if ((item && item.isReload)) {
+                            ++allNum;
+                        }
+                    }
+                } else {
+                    allNum += partNum;
                 }
                 if ( list.length > 0 ) {
                     child.send({ list: spliceList(), modules });
                 } else {
                     child.disconnect();
                 }
-                console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")} ${perfectNum}条`)
+                console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")} 遍历${allNum}条 插入${perfectNum}条 失败${errorNum}条`)
             })
         }));
     }

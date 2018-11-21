@@ -6,24 +6,25 @@ const {datetime} = require("../../src/util/tools");
 
 module.exports = async function warehousing({catalog=[], ...other}) {
     const {name, catalogAddr, cover, author, sources, brief, category} = other;
-    const categorys = (await categoryDao.queryByNames(
+    const categorys = ((await categoryDao.queryByNames(
         category.split(",").map((name) => name.trim())
-        )).map(({category_id}) => category_id).join();
+        ).catch(() => {})) || []).map(({category_id}) => category_id).join();
 
-    const {author_id} = (await authorDao.queryByName(author.trim())) || {author_id: 0};
+    const {author_id} = (await authorDao.queryByName(author.trim()).catch(() => {})) || {};
     const {insertId} = await novelListDao.insert([[
         name, author_id, categorys, 
         cover, sources, brief, catalogAddr, 
         datetime(), datetime()
-    ]]);
-    if (catalog.length) {
+    ]]).catch(() => {}) || {};
+
+    if (catalog.length && insertId) {
         const catalogParams = catalog.map(({name, addr}, index) => {
             return [
                 insertId, name, addr, index,
                 datetime(), datetime()
             ]
         })
-        return catalogDao.insert(catalogParams);
+        catalogDao.insert(catalogParams).catch(() => {});
     }
-    return true;
+    return !!insertId;
 }

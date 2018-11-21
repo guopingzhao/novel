@@ -41,22 +41,7 @@ function forkChild(m, args=[], options={}, cb = () => { }) {
 function datetime(data) {
   return moment(data).format("YYYY-MM-DD HH:mm:ss");
 }
-function mutex () {
-  let lock = false;
-  const next = () => lock = false;
-  return (cb, pointer) => {
-    return (...args) => {
-      while(lock) {console.log('等待')};
-      lock = true;
-      if (pointer) {
-        cb.call(pointer, ...args, next)
-      } else {
-        cb(...args, next);
-      }
-      lock = false;
-    }
-  }
-}
+
 function awaitAll(promises, errorValue) {
   let l = promises.length, result = [];
   return new Promise((resolve) => {
@@ -93,4 +78,3 @@ module.exports.datetime = datetime;
 module.exports.awaitAll = awaitAll; 
 module.exports.list2map = list2map; 
 module.exports.listObj2list = listObj2list; 
-module.exports.synclock = mutex();
