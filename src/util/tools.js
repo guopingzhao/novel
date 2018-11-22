@@ -28,7 +28,7 @@ function forkChild(m, args=[], options={}, cb = () => { }) {
           if (code !== 0) {
             if (isErrorExitRestart) {
               console.log(`${m} restart`);
-              res(forkChild(m, cb));
+              res(forkChild(m, args, forkOptions, cb));
             } else {
               res(false);
             }

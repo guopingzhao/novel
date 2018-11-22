@@ -159,7 +159,11 @@ async function reptileList() {
     )
 }
 
+<<<<<<< HEAD
 let perfectNum = 0, errorNum = 0, allNum = 0;
+=======
+let perfectNum = 0, errorNum = 0;
+>>>>>>> 54b6acb... .
 async function perfect(list=[]) {
     const perfectPath = resolve(__dirname, "perfect.txt");
 
@@ -205,7 +209,11 @@ async function perfect(list=[]) {
                 } else {
                     child.disconnect();
                 }
+<<<<<<< HEAD
                 console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")} 遍历${allNum}条 插入${perfectNum}条 失败${errorNum}条`)
+=======
+                console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")} 插入${perfectNum}条 失败${errorNum}条`)
+>>>>>>> 54b6acb... .
             })
         }));
     }
