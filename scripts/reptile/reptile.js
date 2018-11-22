@@ -184,6 +184,9 @@ async function perfect(list=[]) {
             child.on("message", async (message) => {
                 if (Array.isArray(message)) {
                     for (const item of message) {
+                        if (!item || (item && !item.isReload)) {
+                            ++allNum;
+                        }
                         if (item && item.catalog) {
                             ++perfectNum;
                             warehousing(item).then((result) => {
@@ -196,9 +199,6 @@ async function perfect(list=[]) {
                         } else if(!item.isReload) {
                             item.isReload = true;
                             list.push(item);
-                        }
-                        if (!(item && item.isReload)) {
-                            ++allNum;
                         }
                     }
                 } else {
