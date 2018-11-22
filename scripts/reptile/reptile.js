@@ -193,7 +193,7 @@ async function perfect(list=[]) {
                             item.isReload = true;
                             list.push(item);
                         }
-                        if ((item && item.isReload)) {
+                        if (!(item && item.isReload)) {
                             ++allNum;
                         }
                     }

@@ -1,7 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-// tslint:disable-next-line:import-spacing
-import {ApplicationModule}  from './app.model';
-import './test';
+import { ApplicationModule } from './app.model';
 
 async function bootstrap() {
   const app = await NestFactory.create(ApplicationModule);
