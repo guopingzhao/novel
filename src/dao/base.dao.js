@@ -1,4 +1,4 @@
-const { query, joinOrLike, join } = require("../util/mysql");
+const { query, joinOrLike, join, findOne } = require("../util/mysql");
 
 module.exports = class BaseDao {
   constructor(tableName) {
@@ -30,6 +30,9 @@ module.exports = class BaseDao {
   }
   async query(params={}) {
     return query(this.queryWhereSql(params));
+  }
+  async findOne(params) {
+    return findOne(await this.query(params))
   }
   async update(info, condition) {
     return query(

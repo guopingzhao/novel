@@ -117,8 +117,8 @@ async function mergeList() {
         const category = item.class;
         const author = item.author;
         const isExist = key in listMap;
-        if (!categorys.includes(category)) categorys.push(category);
-        authors[author] = true;
+        if (!categorys.includes(category.trim())) categorys.push(category.trim());
+        authors[author.trim()] = true;
         delete item.addr;
         delete item.class;
         listMap[key] = {
@@ -168,7 +168,7 @@ async function perfect(list=[]) {
     const perfectPath = resolve(__dirname, "perfect.txt");
 
     if (skipNum) {
-        list = list.slice(skipNum);
+        list = list.slice(0, -skipNum);
     } else {
         writeFileSync(perfectPath, "");
     }
@@ -187,7 +187,7 @@ async function perfect(list=[]) {
                         if (!item || (item && !item.isReload)) {
                             ++allNum;
                         }
-                        if (item && item.catalog) {
+                        if (item && item.catalog && item.name) {
                             ++perfectNum;
                             warehousing(item).then((result) => {
                                 if (!result) {

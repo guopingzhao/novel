@@ -1,8 +1,9 @@
 const mysql = require("mysql");
 const {EventEmitter} = require("events");
+const {synclock} = require("./tools");
 
 let defaultConfig = {
-  host: "localhost",
+  host: "zgpv.top",
   port: 3306,
   user: "root",
   password: "root123",
@@ -27,6 +28,7 @@ class MysqlPool extends EventEmitter {
     this.query = this.query.bind(this);
     this.setMysqlConfig = this.setMysqlConfig.bind(this);
     this.setMaxListeners(max * 10);
+    this.getFreeConn = synclock(this.getFreeConn, this);
   }
   initPool(num) {
     const keys = Object.keys(new Array(num).fill(null));
@@ -218,12 +220,17 @@ function join(info, connector='OR') {
 }
 
 function findOne(res) {
-  return res.then((res) => {
-    if (Array.isArray(res)) {
-      return res[0] || null;
+  const cb = (result) => {
+    if (Array.isArray(reresults)) {
+      return result[0] || null;
     }
     return null;
-  })
+  }
+  if (res instanceof Promise) {
+    return res.then(cb)
+  } else {
+    return cb(res)
+  }
 }
 
 function like(fields, connector="OR", format) {

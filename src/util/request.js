@@ -106,7 +106,7 @@ function fetch(url, options = {}, callback) {
         }
         
         req.on("response", (res) => {
-            let resBody = Buffer.alloc(0);
+            const chunks = [];
             const result = {
                 status: res.statusCode,
                 statusCode: res.statusCode,
@@ -114,11 +114,13 @@ function fetch(url, options = {}, callback) {
                 headers: res.headers,
             };
             res.on('data', (chunk) => {
-                resBody = Buffer.concat([resBody, chunk]);
+                chunks.push(chunk);
             });
             res.on('end', () => {
                 clearTimeout(timer);
+                const resBody = Buffer.concat(chunks);
                 result.body = parseResBody(resBody, resType);
+                result.bodyStream = resBody;
                 if (callback) {
                     callback(result);
                 }

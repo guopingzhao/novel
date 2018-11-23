@@ -24,7 +24,12 @@ module.exports = async function warehousing({catalog=[], ...other}) {
                 datetime(), datetime()
             ]
         })
-        catalogDao.insert(catalogParams).catch(() => {});
+        catalogDao.insert(catalogParams).catch(() => {
+            console.error({
+                novelId: insertId,
+                catalog
+            })
+        });
     }
     return !!insertId;
 }

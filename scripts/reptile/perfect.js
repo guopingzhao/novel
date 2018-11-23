@@ -92,7 +92,9 @@ async function start(list, modules) {
   for (let item of list) {
     result.push(handleItem(item, detailScript));
   }
-  process.send(await awaitAll(result, null));
+  process.send(await awaitAll(result, null, (err, i) => {
+    console.error(list[i], '执行详情脚本失败')
+  }));
 }
 console.log(process.pid, "准备就绪");
 process.on("message", ({ list, modules }) => {

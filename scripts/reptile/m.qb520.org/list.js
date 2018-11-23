@@ -19,7 +19,6 @@ if (cluster.isMaster) {
         const bodyStr = iconv.decode(body, "gbk");
         const $ = cheerio.load(bodyStr);
         const max = ~~$(".page").last().text().replace(/.*\/(\d*).*\).*/, "$1");
-        console.log(max, $(".page").last().text())
         for (let j = 1; j <= max; j++) {
             addrs.push(`http://m.qb520.org/topallvote/${j}.html`)
         }
