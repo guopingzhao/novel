@@ -67,11 +67,12 @@ function awaitAll(promises, errorValue, fail = () => { }) {
   })
 }
 
-function list2map(list = [], field) {
+function list2map(list = [], field, valueField) {
   const result = {};
-  list.forEach((item) => {
-    result[item[field]] = item;
-  })
+  const callback = valueField 
+    ? (item) => result[item[field]] = item[valueField] 
+    : (item) => result[item[field]] = item
+  list.forEach(callback)
   return result;
 }
 

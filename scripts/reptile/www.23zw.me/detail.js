@@ -10,14 +10,12 @@ module.exports = async function p (url, i) {
     const name = $("#container > div.topr > div.chapter_list_novel_title > h1").text();
     const cover = "https://www.23zw.me" + $("#container > div.cover > img").attr("src");
     const brief = $("#container > div.topr > div.intro").text().trim().replace(/.*简介：?/, "");
-    const catalog = await catalogScript(url);
     
     return {
         name,
         catalogAddr: url,
         brief,
         cover,
-        catalog
     }
 }
 

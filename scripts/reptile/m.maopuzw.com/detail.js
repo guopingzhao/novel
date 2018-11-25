@@ -12,13 +12,11 @@ module.exports = async function p (url) {
     const cover = $("body > div.cover > div.block > div.block_img2 > img").attr("src");
     const brief = $("body > div.cover > div.intro_info").text();
     const catalogUrl = host + $("body > div.cover > div:nth-child(3) > span:nth-child(2) > a").attr("href")
-    const catalog = await catalogScript(catalogUrl, true)
     return {
         name,
         catalogAddr: catalogUrl,
         brief,
         cover,
-        catalog
     };
 }
 

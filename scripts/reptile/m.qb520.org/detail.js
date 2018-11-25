@@ -10,15 +10,13 @@ module.exports = async function p (url) {
     const $ = cheerio.load(bodyStr);
     const name = $("body > div.cover > div.block > div.block_txt2 > h2 > a").text();
     const src = $("body > div.cover > div.block > div.block_img2 > img").attr("src");
-    const cover = src.includes(host) ? src : `${host}${src}`;
+    const cover = src.includes('www.qb520.org') ? src : `${host}${src}`;
     const brief = $("body > div.cover > div.intro_info").text();
-    const catalog = await catalogScript(url)
     return {
         name,
         catalogAddr: url,
         brief,
         cover,
-        catalog
     };
 }
 

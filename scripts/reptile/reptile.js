@@ -1,56 +1,14 @@
 const { resolve } = require("path");
 const { writeFileSync, readFileSync, existsSync, appendFileSync } = require("fs");
 const moment = require("moment");
+const modules = require("./modules");
 const { forkChild } = require("../../src/util/tools");
 const warehousingAuthor = require("../mysql/warehousing.author");
 const warehousingCategory = require("../mysql/warehousing.category");
 const warehousing = require("../mysql/warehousing.novel");
+const warehousingCatalog = require("../mysql/warehousing.catalog");
 
 console.log(process.argv)
-
-// module name
-const qukankan = "qukankan";
-const aoshi = "aoshi";
-const maopu = "maopu";
-const quanben = "quanben";
-
-// module root path
-const qukankanDir = resolve(__dirname, "./m.7kankan.com");   // a
-const aoshiDir = resolve(__dirname, "./www.23zw.me");        // b
-const maopuDir = resolve(__dirname, "./m.maopuzw.com");      // c
-const quanbenDir = resolve(__dirname, "./m.qb520.org");    // d
-
-
-const modules = {
-    [qukankan]: {
-        sourceAlias: "a",
-        dir: qukankanDir,
-        list: resolve(qukankanDir, "list.js"),
-        detail: resolve(qukankanDir, "detail.js"),
-        content: resolve(qukankanDir, "content.js"),
-    },
-    [aoshi]: {
-        sourceAlias: "b",
-        dir: aoshiDir,
-        list: resolve(aoshiDir, "list.js"),
-        detail: resolve(aoshiDir, "detail.js"),
-        content: resolve(aoshiDir, "content.js"),
-    },
-    [maopu]: {
-        sourceAlias: "c",
-        dir: maopuDir,
-        list: resolve(maopuDir, "list.js"),
-        detail: resolve(maopuDir, "detail.js"),
-        content: resolve(maopuDir, "content.js"),
-    },
-    [quanben]: {
-        sourceAlias: "d",
-        dir: quanbenDir,
-        list: resolve(quanbenDir, "list.js"),
-        detail: resolve(quanbenDir, "detail.js"),
-        content: resolve(quanbenDir, "content.js"),
-    },
-}
 
 const defaultStep = "step=1,2,3";
 const defaultSources = "sources=" + Object.values(modules).reduce((a, {sourceAlias}) => a ? `${a},${sourceAlias}` : sourceAlias ,"");
@@ -71,12 +29,16 @@ const maxProcessCoefStr = args.find((item) => item.includes("maxProcessCoef=")) 
 const maxProcessCoef = parseFloat(maxProcessCoefStr.replace(/maxProcessCoef=/g, "")) || defaultMaxProcessCoef;
 
 // 第三步每次完善几条
-const perNumfStr = args.find((item) => item.includes("perNum=")) || "";
-const perNum = (~~perNumfStr.replace(/perNum=/g, "")) || 9;
+const obtainNumStr = args.find((item) => item.includes("obtainNum=")) || "";
+const obtainNum = (~~obtainNumStr.replace(/obtainNum=/g, "")) || 9;
 
 // 第三步完善时跳过多少条
 const skipNumfStr = args.find((item) => item.includes("skipNum=")) || "";
 const skipNum = (~~skipNumfStr.replace(/skipNum=/g, "")) || 0;
+
+// 第四步录入目录跳过多少条
+const skipCatalogNumfStr = args.find((item) => item.includes("skipCatalogNum=")) || "";
+const skipCatalogNum = (~~skipCatalogNumfStr.replace(/skipCatalogNum=/g, "")) || 0;
 
 // 最大子进程数
 const maxChildProcessNum = ~~(require("os").cpus().length * maxProcessCoef) || 2;
@@ -159,24 +121,20 @@ async function reptileList() {
     )
 }
 
-<<<<<<< HEAD
 let perfectNum = 0, errorNum = 0, allNum = 0;
-=======
-let perfectNum = 0, errorNum = 0;
->>>>>>> 54b6acb... .
 async function perfect(list=[]) {
-    const perfectPath = resolve(__dirname, "perfect.txt");
-
     if (skipNum) {
         list = list.slice(0, -skipNum);
-    } else {
-        writeFileSync(perfectPath, "");
     }
-
+    console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")} 读取分类`)
+    const categoryMap = await warehousing.getCategoryMap();
+    console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")} 读取作者`)
+    const authorMap = await warehousing.getAuthorMap();
+    console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")} 开始遍历`)
     const forks = [];
     const childs = [];
-    let partNum = perNum, max = Math.ceil(list.length / partNum);
-    let spliceList = () => list.splice(Math.max(list.length - partNum, 0), partNum)
+    let partNum = obtainNum, max = Math.ceil(list.length / partNum);
+    let spliceList = () => list.splice(Math.max(list.length - obtainNum, 0), partNum)
     for (let i = 0; i < maxChildProcessNum; i++) {
         forks.push(forkChild(resolve(__dirname, "perfect.js"), (child) => {
             childs.push(child);
@@ -187,8 +145,10 @@ async function perfect(list=[]) {
                         if (!item || (item && !item.isReload)) {
                             ++allNum;
                         }
-                        if (item && item.catalog && item.name) {
+                        if (item && item.name && item.catalogAddr) {
                             ++perfectNum;
+                            item.authorId = authorMap[item.author.trim()];
+                            item.categorys = item.category.split(",").map((it) => categoryMap[it.trim()]).join() ;
                             warehousing(item).then((result) => {
                                 if (!result) {
                                     ++errorNum;
@@ -209,16 +169,63 @@ async function perfect(list=[]) {
                 } else {
                     child.disconnect();
                 }
-<<<<<<< HEAD
-                console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")} 遍历${allNum}条 插入${perfectNum}条 失败${errorNum}条`)
-=======
-                console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")} 插入${perfectNum}条 失败${errorNum}条`)
->>>>>>> 54b6acb... .
+                console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")} 遍历${allNum}条 插入${perfectNum}条 成功${perfectNum - errorNum}条 失败${errorNum}条`)
             })
         }));
     }
     console.log(`一共需要整理${list.length}条，每次整理${partNum}条，最多整理${max}次，开启${maxChildProcessNum}个子进程整理: ${childs.map((item) => item.pid).join()}`);
     await Promise.all(forks);
+}
+
+async function catalog() {
+    let list = await warehousingCatalog.getList();
+    if (skipCatalogNum) {
+        list = list.slice(0, -skipCatalogNum);
+    }
+
+    const forks = [];
+    const childs = [];
+    let partNum = obtainNum, max = Math.ceil(list.length / partNum);
+    let spliceList = () => list.splice(Math.max(list.length - partNum, 0), partNum)
+    for (let i = 0; i < maxChildProcessNum; i++) {
+        forks.push(forkChild(resolve(__dirname, "catalog.js"), (child) => {
+            childs.push(child);
+            child.send({ list: spliceList() });
+            child.on("message", async (message) => {
+                if (Array.isArray(message)) {
+                    for (const item of message) {
+                        if (!item || (item && !item.isReload)) {
+                            ++allNum;
+                        }
+                        if (item.catalog) {
+                            ++perfectNum;
+                            warehousingCatalog(item.catalog, item.novel_id).then((result) => {
+                                if (!result) {
+                                    ++errorNum;
+                                    warehousingCatalog(item.catalog, item.novel_id);
+                                }
+                            })
+                            
+                        } else if(!item.isReload) {
+                            item.isReload = true;
+                            list.push(item);
+                        }
+                    }
+                } else {
+                    allNum += partNum;
+                }
+                if ( list.length > 0 ) {
+                    child.send({ list: spliceList(), modules });
+                } else {
+                    child.disconnect();
+                }
+                console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")} 遍历${allNum}本 插入${perfectNum}本 成功${perfectNum - errorNum}本 失败${errorNum}本`)
+            })
+        }));
+    }
+    console.log(`一共需要爬取${list.length}本，每次爬取${partNum}本，最多整理${max}次，开启${maxChildProcessNum}个子进程整理: ${childs.map((item) => item.pid).join()}`);
+    await Promise.all(forks);
+
 }
 
 async function start() {
@@ -242,15 +249,21 @@ async function start() {
             console.error("读取文件列表失败", error);
         }
     }
-    console.log(`==========合并列表完成，开始完善列表信息 列表长度${list.length} ${moment().format("YYYY-MM-DD HH:mm:ss")}==========`);
+    console.log(`==========合并列表完成，开始完善列表信息并入库 列表长度${list.length} ${moment().format("YYYY-MM-DD HH:mm:ss")}==========`);
     if (steps.includes(3)) {
         await perfect(list);
     } else {
-        console.log("==========忽略完善列表==========");
+        console.log("==========忽略完善列表和入库==========");
     }
     
-    console.log("==========完善列表信息结束==========");
+    console.log(`==========完善列表信息结束, 开始录入目录 ${moment().format("YYYY-MM-DD HH:mm:ss")}==========`);
 
+    if (steps.includes(4)) {
+        await catalog();
+    } else {
+        console.log("==========忽略录入目录==========");
+    }
+    console.log("==========录入目录完成==========");
 
     console.log(`==========用时: ${((Date.now() - start) / 1000 / 60).toFixed(0)}分钟==========`);
     console.log(`==========结束时间: ${moment().format("YYYY-MM-DD HH:mm:ss")}==========`);
