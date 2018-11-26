@@ -6,17 +6,19 @@ module.exports = async function warehousing(catalog, novelId) {
     if (catalog.length && novelId) {
         const catalogParams = catalog.map(({name, addr}, index) => {
             return [
-                insertId, name, addr, index,
+                novelId, name, addr, index,
                 datetime(), datetime()
             ]
         })
-        catalogDao.insert(catalogParams).catch(() => {
-            console.error({
+        const {affectedRows} = await catalogDao.insert(catalogParams).catch((err) => {
+            console.error(err, {
                 novelId,
                 catalog
             })
-        });
+        }) || {};
+        return affectedRows > 0;
     }
+    return false;
 }
 
 module.exports.getList = function() {

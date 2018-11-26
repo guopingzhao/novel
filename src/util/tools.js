@@ -95,6 +95,8 @@ function mutex() {
       }
       if (result instanceof Promise) {
         success(await result.catch(fail))
+      } else {
+        success(result)
       }
     }
     lock = false;

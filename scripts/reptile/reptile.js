@@ -135,7 +135,7 @@ async function perfect(list=[]) {
     const childs = [];
     let partNum = obtainNum, max = Math.ceil(list.length / partNum);
     let spliceList = () => list.splice(Math.max(list.length - obtainNum, 0), partNum)
-    for (let i = 0; i < maxChildProcessNum; i++) {
+    for (let i = 0; i < maxChildProcessNum && list.length > 0; i++) {
         forks.push(forkChild(resolve(__dirname, "perfect.js"), (child) => {
             childs.push(child);
             child.send({ list: spliceList(), modules });
@@ -175,6 +175,7 @@ async function perfect(list=[]) {
     }
     console.log(`一共需要整理${list.length}条，每次整理${partNum}条，最多整理${max}次，开启${maxChildProcessNum}个子进程整理: ${childs.map((item) => item.pid).join()}`);
     await Promise.all(forks);
+    perfectNum = 0, errorNum = 0, allNum = 0;
 }
 
 async function catalog() {
@@ -187,7 +188,7 @@ async function catalog() {
     const childs = [];
     let partNum = obtainNum, max = Math.ceil(list.length / partNum);
     let spliceList = () => list.splice(Math.max(list.length - partNum, 0), partNum)
-    for (let i = 0; i < maxChildProcessNum; i++) {
+    for (let i = 0; i < maxChildProcessNum && list.length > 0; i++) {
         forks.push(forkChild(resolve(__dirname, "catalog.js"), (child) => {
             childs.push(child);
             child.send({ list: spliceList() });
@@ -197,7 +198,7 @@ async function catalog() {
                         if (!item || (item && !item.isReload)) {
                             ++allNum;
                         }
-                        if (item.catalog) {
+                        if (item.catalog && item.catalog.length) {
                             ++perfectNum;
                             warehousingCatalog(item.catalog, item.novel_id).then((result) => {
                                 if (!result) {
@@ -205,7 +206,6 @@ async function catalog() {
                                     warehousingCatalog(item.catalog, item.novel_id);
                                 }
                             })
-                            
                         } else if(!item.isReload) {
                             item.isReload = true;
                             list.push(item);

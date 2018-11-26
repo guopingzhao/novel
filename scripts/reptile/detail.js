@@ -99,7 +99,11 @@ module.exports.catalog = async function (url) {
         if (!script) continue;
         let falg = await script.catalogScript(source).catch(() => {});
         if (falg) {
-            mergeCatalog(catalog, falg);
+            if(catalog.length) {
+                mergeCatalog(catalog, falg);
+            } else {
+                catalog.push(...falg);
+            }
         }
     }
     return catalog;

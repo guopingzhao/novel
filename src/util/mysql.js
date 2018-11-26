@@ -49,9 +49,8 @@ class MysqlPool extends EventEmitter {
         status: normal
       }
 
-      conn.once("error", (err) => {
-        console.error(`${key} 发生错误`, err)
-        result.conn = null;
+      conn.once("error", () => {
+        console.error(`${key} 发生错误`)
         result.status = wrong;
       })
 
@@ -73,18 +72,20 @@ class MysqlPool extends EventEmitter {
   }
   getFreeConn() {
     return new Promise(async (resolve, reject) => {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         reject("获取连接超时");
       }, this.timeout);
       const poolEntries = Object.entries(this.pool);
       let vacancyOrError = null;
-
+      const {busy, wrong} = this.connStatusMap;
       for (let [key, val] of poolEntries) {
         if (val.conn && !val.status) {
+          val.status = busy;
+          clearTimeout(timer);
           resolve([key, val]);
           return;
         }
-        if (!val.conn || val.status === this.connStatusMap.wrong) {
+        if (!vacancyOrError && !val.conn) {
           vacancyOrError = key;
         }
       }
@@ -93,16 +94,19 @@ class MysqlPool extends EventEmitter {
           const conn = await this.createConn(vacancyOrError).catch((err) => reject(err));
           if (!conn) return;
           this.pool[vacancyOrError] = conn;
+          clearTimeout(timer);
+          conn.status = busy;
           resolve([vacancyOrError, conn])
       } else {
         this.once("queryEnd", (data) => {
+          clearTimeout(timer);
+          data[1].status = busy;
           resolve(data)
         })
       }
     })
   }
   query (sql, params, cb = () => {}) {
-
     if (!sql) {
       throw new Error("Invalid SQL statement");
     }
@@ -111,7 +115,7 @@ class MysqlPool extends EventEmitter {
         cb = params;
         params = undefined;
       }
-      const {wrong, normal, busy} = this.connStatusMap;
+      const {wrong, normal} = this.connStatusMap;
 
       const freeConn = await this.getFreeConn().catch((error) => {
         const message = "Failed to get SQL connection";
@@ -127,12 +131,11 @@ class MysqlPool extends EventEmitter {
 
       const [key, connection] = freeConn;
 
-      connection.status = busy;
-
       const queryParams = params ? [sql, params] : [sql];
 
       const query = connection.conn.query(...queryParams, (err, result) => {
         if (err) {
+          connection.status = wrong;
           cb(err);
           reject(err);
         } else {
@@ -151,19 +154,18 @@ class MysqlPool extends EventEmitter {
       });
 
       query.once("error", (err) => {
-        console.error("query error", err);
+        console.error("query error", key, err.sqlMessage, err.sqlState, err.sql);
         connection.status = wrong;
         cb(err);
         reject(err);
       })
      
       query.once("end", () => {
-        if (connection.status !== wrong) {
-          connection.status = normal;
-          if (this.listenerCount("queryEnd")) {
-            this.emit("queryEnd", [key, connection]);
+          if (this.listenerCount("queryEnd") && connection.status !== wrong) {
+            this.emit("queryEnd", freeConn);
+          } else {
+            connection.status = normal;
           }
-        }
       })
     })
   }
