@@ -24,7 +24,7 @@ create table novel_list_temp (
   INDEX temp(novel_id, novel_name, novel_category, novel_author, novel_sources)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-create table novel_catalog (
+CREATE TABLE novel_catalog (
   catalog_id INT NOT NULL AUTO_INCREMENT,
   novel_id INT NOT NULL,
   catalog_name VARCHAR(128),
@@ -33,7 +33,8 @@ create table novel_catalog (
   create_time DATETIME,
   update_time DATETIME,
   PRIMARY KEY (catalog_id),
-  INDEX catalog(catalog_id, novel_id, catalog_name, content_sources)
+  INDEX catalog(catalog_id, novel_id, catalog_name, content_sources),
+	CONSTRAINT novel FOREIGN KEY(novel_id) REFERENCES novel_list(novel_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 create table novel_category (
