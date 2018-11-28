@@ -11,10 +11,10 @@ module.exports = async function warehousing(catalog, novelId) {
             ]
         })
         const {affectedRows} = await catalogDao.insert(catalogParams).catch((err) => {
-            console.error(err, {
-                novelId,
-                catalog
-            })
+            // console.error(err, {
+            //     novelId,
+            //     catalog
+            // })
         }) || {};
         return affectedRows > 0;
     }

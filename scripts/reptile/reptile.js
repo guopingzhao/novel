@@ -203,7 +203,16 @@ async function catalog() {
                             warehousingCatalog(item.catalog, item.novel_id).then((result) => {
                                 if (!result) {
                                     ++errorNum;
-                                    warehousingCatalog(item.catalog, item.novel_id);
+                                    warehousingCatalog(item.catalog, item.novel_id).then((result) => {
+                                        if (!result) {
+                                            appendFileSync(resolve(__dirname, 'fail.txt'), JSON.stringify({
+                                                novelId: item.novel_id,
+                                                catalog: item.catalog
+                                            }))
+                                        } else {
+                                            --errorNum;
+                                        }
+                                    });
                                 }
                             })
                         } else if(!item.isReload) {
