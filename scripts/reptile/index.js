@@ -11,7 +11,7 @@ writeFileSync(errorLogPath, "");
 
 const outLog = openSync(outLogPath, "w");
 const errorLog = openSync(errorLogPath, "w");
-const forkOptions = { isErrorExitRestart: true, stdio: ["ignore", outLog, errorLog, 'ipc'] }
+const forkOptions = { isErrorExitRestart: false, stdio: ["ignore", outLog, errorLog, 'ipc'] }
 
 forkChild(resolve(__dirname, "reptile.js"), process.argv.slice(2), forkOptions);
 

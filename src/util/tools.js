@@ -20,8 +20,8 @@ function forkChild(m, args = [], options = {}, cb = () => { }) {
     console.log(`fork ${m}`);
     const child = fork(m, args, forkOptions);
     cb(child);
-    child.on("error", () => {
-      console.log("error")
+    child.on("error", (error) => {
+      console.log("child error", error)
     })
     child.once("exit", (code) => {
       console.log(`${m} exit, code:${code}`);
