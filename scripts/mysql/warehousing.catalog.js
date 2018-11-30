@@ -1,5 +1,5 @@
+const { query } = require("../../src/util/mysql");
 const catalogDao = require("../../src/dao/catalog.dao");
-const novelListDao = require("../../src/dao/list.dao");
 const {datetime} = require("../../src/util/tools");
 
 module.exports = async function warehousing(catalog, novelId) {
@@ -11,10 +11,7 @@ module.exports = async function warehousing(catalog, novelId) {
             ]
         })
         const {affectedRows} = await catalogDao.insert(catalogParams).catch((err) => {
-            // console.error(err, {
-            //     novelId,
-            //     catalog
-            // })
+            console.error(err)
         }) || {};
         return affectedRows > 0;
     }
@@ -22,5 +19,5 @@ module.exports = async function warehousing(catalog, novelId) {
 }
 
 module.exports.getList = function() {
-    return novelListDao.query()
+    return query("SELECT novel_id, novel_catalog FROM novel_list");
 }
