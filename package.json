@@ -11,24 +11,24 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@nestjs/common": "^5.4.0",
-    "@nestjs/core": "^5.4.0",
-    "@nestjs/microservices": "^5.4.0",
-    "@nestjs/testing": "^5.4.0",
-    "@nestjs/websockets": "^5.4.0",
+    "@nestjs/common": "^5.6.2",
+    "@nestjs/core": "^5.6.2",
+    "@nestjs/microservices": "^5.6.2",
+    "@nestjs/testing": "^5.6.2",
+    "@nestjs/websockets": "^5.6.2",
     "cheerio": "^1.0.0-rc.2",
     "iconv-lite": "^0.4.24",
-    "moment": "^2.22.2",
+    "moment": "^2.23.0",
     "mysql": "^2.16.0",
-    "reflect-metadata": "^0.1.12",
+    "reflect-metadata": "^0.1.13",
     "request": "^2.88.0",
     "rxjs": "^6.3.3"
   },
   "devDependencies": {
-    "nodemon": "^1.18.6",
+    "nodemon": "^1.18.9",
     "ts-node": "^7.0.1",
     "tsconfig-paths": "^3.7.0",
-    "tslint": "^5.11.0",
-    "typescript": "^3.1.6"
+    "tslint": "^5.12.1",
+    "typescript": "^3.2.2"
   }
 }
